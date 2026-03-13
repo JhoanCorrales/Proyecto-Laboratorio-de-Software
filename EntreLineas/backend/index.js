@@ -1,11 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import db from "./db/index.js";
+import authRouter from "./routes/auth.js";
 
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE"];
+const requiredEnvVars = ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE", "JWT_SECRET"];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -24,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 // Enable CORS for frontend development
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   if (req.method === "OPTIONS") {
     res.sendStatus(200);
@@ -61,6 +62,9 @@ app.get("/api/health", async (req, res) => {
     res.status(503).json({ status: "unhealthy", database: "disconnected", error: err.message });
   }
 });
+
+// Auth routes
+app.use("/api/auth", authRouter);
 
 // 404 handler
 app.use((req, res) => {

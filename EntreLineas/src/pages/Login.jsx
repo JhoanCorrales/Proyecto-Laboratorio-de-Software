@@ -1,4 +1,31 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login, saveSession } from "../services/authService";
+
 export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { token, user } = await login(email, password);
+      saveSession(token, user);
+      // Redirigir según rol
+      navigate("/home");
+    } catch (err) {
+      setError(err.message || "Error al iniciar sesión.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-dark font-display text-slate-100">
       
@@ -38,7 +65,7 @@ export default function Login() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-5 mb-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5 mb-6">
 
               <div>
                 <label className="text-sm font-medium pb-2 block">
@@ -47,7 +74,11 @@ export default function Login() {
                 <input
                   type="email"
                   placeholder="Ingresa tu correo electrónico"
-                  className="w-full rounded-lg border border-neutral-border bg-neutral-dark h-12 px-4 focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full rounded-lg border border-neutral-border bg-neutral-dark h-12 px-4 focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -58,7 +89,11 @@ export default function Login() {
                 <input
                   type="password"
                   placeholder="Ingresa tu contraseña"
-                  className="w-full rounded-lg border border-neutral-border bg-neutral-dark h-12 px-4 focus:ring-2 focus:ring-primary focus:outline-none"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full rounded-lg border border-neutral-border bg-neutral-dark h-12 px-4 focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50"
                 />
                 <div className="flex justify-end pt-2">
                   <a href="#" className="text-sm text-neutral-muted hover:text-primary underline">
@@ -67,11 +102,30 @@ export default function Login() {
                 </div>
               </div>
 
-            </div>
+              {/* Error message */}
+              {error && (
+                <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/30 rounded-lg px-4 py-3">
+                  {error}
+                </div>
+              )}
 
-            <button className="w-full h-12 bg-primary text-background-dark font-bold rounded-lg hover:opacity-90 transition-opacity">
-              Iniciar Sesión
-            </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 bg-primary text-background-dark font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[20px]">
+                      progress_activity
+                    </span>
+                    Iniciando sesión...
+                  </>
+                ) : (
+                  "Iniciar Sesión"
+                )}
+              </button>
+            </form>
 
             <div className="text-center mt-6">
               <p className="text-sm text-neutral-muted">
