@@ -42,7 +42,7 @@ export default function Login() {
           <header className="flex items-center justify-between border-b border-neutral-accent px-4 py-3 mb-6">
             <div className="flex items-center gap-4">
               <span className="material-symbols-outlined text-primary text-3xl">
-                auto_stories
+                menu_book
               </span>
               <h2 className="text-lg font-bold">Entre Líneas</h2>
             </div>
