@@ -1,4 +1,9 @@
+import { AnimatedTextGenerate } from "@/components/ui/animated-textgenerate";
+
 function Hero() {
+  const heroText = "Bienvenido a tu próxima gran historia";
+  const paragraphText = "Explora miles de títulos desde clásicos atemporales hasta los últimos lanzamientos tecnológicos. Nuestra biblioteca inteligente te ofrece una experiencia de lectura única.";
+
   return (
     <header className="relative min-h-[600px] flex items-center overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -14,12 +19,24 @@ function Hero() {
             <span className="material-symbols-outlined text-sm">auto_awesome</span>
             Nueva Colección Digital
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black leading-tight text-white">
-            Bienvenido a tu próxima <span className="text-primary">gran historia</span>
-          </h1>
-          <p className="text-lg text-neutral-muted leading-relaxed">
-            Explora miles de títulos desde clásicos atemporales hasta los últimos lanzamientos tecnológicos. Nuestra biblioteca inteligente te ofrece una experiencia de lectura única.
-          </p>
+          <AnimatedTextGenerate
+            text={heroText}
+            className="mb-8"
+            textClassName="text-5xl lg:text-7xl font-black leading-tight text-white"
+            blurEffect
+            speed={0.5}
+            highlightWords={[]}
+            highlightClassName="text-primary font-bold"
+          />
+          <AnimatedTextGenerate
+            text={paragraphText}
+            className="mb-8"
+            textClassName="text-lg text-neutral-muted leading-relaxed"
+            blurEffect
+            speed={0.5}
+            highlightWords={[]}
+            highlightClassName="text-primary font-bold"
+          />
           <div className="flex flex-wrap gap-4 pt-4">
             <button className="px-8 py-4 bg-primary text-background-dark font-bold rounded-lg hover:brightness-110 transition-all flex items-center gap-2">
               Explorar Catálogo
