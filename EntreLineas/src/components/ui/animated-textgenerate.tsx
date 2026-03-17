@@ -58,7 +58,7 @@ export const AnimatedTextGenerate = ({
 
   const generateWords = () => {
     return (
-      <div className='flex flex-wrap items-center gap-1'>
+      <div className='flex flex-wrap items-center gap-2.5'>
         {splitWords.map((word, idx) => {
           const isVisible = idx < visibleCount;
           const remaining = splitWords.length - visibleCount;
