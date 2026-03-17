@@ -5,7 +5,7 @@ function Navbar() {
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 text-primary">
             <span className="material-symbols-outlined text-3xl shrink-0">menu_book</span>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Entre Líneas</h1>
+            <a className="text-xl font-bold tracking-tight text-slate-900 dark:text-white" href="/home">Entre Líneas</a>
           </div>
           <div className="hidden md:flex items-center gap-6">
             <a className="text-sm font-medium hover:text-primary transition-colors" href="#">Catálogo</a>
@@ -31,7 +31,7 @@ function Navbar() {
             <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-background-dark">3</span>
           </button>
           <button className="p-2 hover:bg-primary/10 rounded-full transition-colors">
-            <span className="material-symbols-outlined">account_circle</span>
+            <a className="material-symbols-outlined" href="/profile/edit">account_circle</a>
           </button>
         </div>
       </div>
