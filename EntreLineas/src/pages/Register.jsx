@@ -1,7 +1,13 @@
+'use client';
+
+import { useState } from 'react';
 import Input from "../components/Input"
 import Select from "../components/Select"
+import { Label } from "../components/ui/label"
+import { motion } from 'motion/react';
 
 export default function Register() {
+  const [isChecked, setIsChecked] = useState(false);
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 relative overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
 
@@ -20,7 +26,7 @@ export default function Register() {
         <div className="p-6 sm:p-10 border-b border-slate-200 dark:border-[#325a67] flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
             <span className="material-symbols-outlined text-primary text-4xl">
-              auto_stories
+              menu_book
             </span>
           </div>
 
@@ -91,7 +97,7 @@ export default function Register() {
 
             {/* Tema */}
             <Select
-              label="Temas literarios de preferencia"
+              label="Tema literario más preferido"
               className="md:col-span-2"
               options={[
                 "Ficción",
@@ -104,25 +110,36 @@ export default function Register() {
             />
 
             {/* Checkbox */}
-            <div className="md:col-span-2 flex items-start gap-3 mt-2">
-              <input
+            <div className="md:col-span-2 flex items-center gap-3 mt-2">
+              <motion.input
                 id="data-treatment"
                 type="checkbox"
+                checked={isChecked}
+                onChange={(e) => setIsChecked(e.target.checked)}
+                animate={isChecked ? { scale: [1, 1.1, 1] } : {}}
+                transition={{ duration: 0.3 }}
                 className="w-5 h-5 rounded border-slate-300 dark:border-[#325a67] text-primary cursor-pointer"
               />
-              <label
-                htmlFor="data-treatment"
-                className="text-sm text-slate-700 dark:text-[#92bbc9] cursor-pointer"
+              <motion.div
+                animate={isChecked ? { x: [0, -5, 5, -5, 0] } : {}}
+                transition={{ duration: 0.4 }}
               >
-                Acepto el tratamiento de datos personales
-              </label>
+                <Label htmlFor="data-treatment" direction="right" disableAnimation className="text-sm text-slate-700 dark:text-[#92bbc9] cursor-pointer">
+                  Acepto el tratamiento de datos personales
+                </Label>
+              </motion.div>
             </div>
 
             {/* Botón */}
             <div className="md:col-span-2 mt-4">
               <button
                 type="submit"
-                className="w-full bg-primary hover:opacity-90 text-background-dark font-bold py-4 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                disabled={!isChecked}
+                className={`w-full font-bold py-4 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
+                  isChecked
+                    ? 'bg-primary hover:opacity-90 text-background-dark shadow-primary/20 cursor-pointer'
+                    : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-50'
+                }`}
               >
                 <span>Registrarse</span>
                 <span className="material-symbols-outlined">

@@ -12,6 +12,7 @@
     "server:dev": "cd backend && nodemon index.js"
   },
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.8",
     "clsx": "^2.1.1",
     "motion": "^12.37.0",
     "react": "^19.2.0",
