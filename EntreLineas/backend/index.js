@@ -6,12 +6,12 @@ import authRouter from "./routes/auth.js";
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE", "JWT_SECRET"];
+const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET"];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   console.error(`Error: Missing environment variables: ${missingEnvVars.join(", ")}`);
-  console.error("Please create a .env file with the required PostgreSQL configuration.");
+  console.error("Please create a .env file with DATABASE_URL and JWT_SECRET.");
   process.exit(1);
 }
 

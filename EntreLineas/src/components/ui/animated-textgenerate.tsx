@@ -23,7 +23,7 @@ export const AnimatedTextGenerate = ({
   className,
   textClassName,
   blurEffect = true,
-  speed = 0.5,
+  speed = 4,
   highlightWords = [],
   highlightClassName,
   linkWords = [],

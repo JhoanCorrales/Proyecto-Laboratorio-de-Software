@@ -10,7 +10,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const { Pool } = pkg;
-const pool = new Pool();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 async function seedTestUser() {
   const email = "test@entrelineas.com";
