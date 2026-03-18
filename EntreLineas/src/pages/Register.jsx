@@ -1,13 +1,136 @@
 'use client';
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Input from "../components/Input"
 import Select from "../components/Select"
 import { Label } from "../components/ui/label"
 import { motion } from 'motion/react';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [isChecked, setIsChecked] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  const [formData, setFormData] = useState({
+    nombre: '',
+    apellidos: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    telefono: '',
+    direccion: '',
+    ciudad: '',
+    departamento: '',
+    codigo_postal: '',
+    fecha_nacimiento: '',
+    lugar_nacimiento: '',
+    genero: '',
+    tema_literario: ''
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const validateForm = () => {
+    if (!formData.nombre.trim()) {
+      setError('El nombre es obligatorio');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setError('El correo es obligatorio');
+      return false;
+    }
+    if (!formData.email.includes('@')) {
+      setError('El correo no es válido');
+      return false;
+    }
+    if (!formData.password) {
+      setError('La contraseña es obligatoria');
+      return false;
+    }
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return false;
+    }
+    if (!isChecked) {
+      setError('Debes aceptar el tratamiento de datos');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:4003/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          apellidos: formData.apellidos,
+          email: formData.email,
+          password: formData.password,
+          telefono: formData.telefono,
+          direccion: formData.direccion,
+          ciudad: formData.ciudad,
+          departamento: formData.departamento,
+          codigo_postal: formData.codigo_postal,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Error en el registro');
+        setLoading(false);
+        return;
+      }
+
+      // Guardar el token en localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      setSuccess('¡Registro exitoso! Redirigiendo...');
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Error de conexión con el servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 relative overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
 
@@ -42,39 +165,39 @@ export default function Register() {
         {/* Form Container */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar">
 
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-            {/* DNI */}
-            <Input label="DNI" placeholder="Ingrese su DNI" />
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
 
-            {/* Fecha */}
-            <Input label="Fecha de nacimiento" type="date" />
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Nombres */}
-            <Input label="Nombres" placeholder="Sus nombres" />
-
-            {/* Apellidos */}
-            <Input label="Apellidos" placeholder="Sus apellidos" />
-
-            {/* Lugar */}
-            <Input label="Lugar de nacimiento" placeholder="Ciudad, País" />
-
-            {/* Género */}
-            <Select
-              label="Género"
-              options={[
-                "Femenino",
-                "Masculino",
-                "Otro",
-                "Prefiero no decirlo",
-              ]}
+            <Input 
+              label="Nombres" 
+              placeholder="Sus nombres"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleInputChange}
+              required
             />
 
-            {/* Dirección */}
-            <Input
-              label="Dirección de correspondencia"
-              placeholder="Calle, número, ciudad y código postal"
-              className="md:col-span-2"
+            {/* Apellidos */}
+            <Input 
+              label="Apellidos" 
+              placeholder="Sus apellidos"
+              name="apellidos"
+              value={formData.apellidos}
+              onChange={handleInputChange}
             />
 
             {/* Email */}
@@ -83,30 +206,78 @@ export default function Register() {
               type="email"
               placeholder="ejemplo@correo.com"
               className="md:col-span-2"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
             />
-
-            {/* Usuario */}
-            <Input label="Usuario" placeholder="Nombre de usuario" />
 
             {/* Contraseña */}
             <Input
               label="Contraseña"
               type="password"
               placeholder="Mínimo 8 caracteres"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
             />
 
-            {/* Tema */}
-            <Select
-              label="Tema literario más preferido"
+            {/* Confirmar Contraseña */}
+            <Input
+              label="Confirmar Contraseña"
+              type="password"
+              placeholder="Repite tu contraseña"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              required
+            />
+
+            {/* Teléfono */}
+            <Input 
+              label="Teléfono" 
+              placeholder="Tu número de teléfono"
+              name="telefono"
+              value={formData.telefono}
+              onChange={handleInputChange}
+            />
+
+            {/* Ciudad */}
+            <Input 
+              label="Ciudad" 
+              placeholder="Tu ciudad"
+              name="ciudad"
+              value={formData.ciudad}
+              onChange={handleInputChange}
+            />
+
+            {/* Dirección */}
+            <Input
+              label="Dirección de correspondencia"
+              placeholder="Calle, número, ciudad y código postal"
               className="md:col-span-2"
-              options={[
-                "Ficción",
-                "Misterio",
-                "Fantasía",
-                "Historia",
-                "Ciencia Ficción",
-                "Poesía",
-              ]}
+              name="direccion"
+              value={formData.direccion}
+              onChange={handleInputChange}
+            />
+
+            {/* Departamento */}
+            <Input 
+              label="Departamento" 
+              placeholder="Tu departamento/estado"
+              name="departamento"
+              value={formData.departamento}
+              onChange={handleInputChange}
+            />
+
+            {/* Código Postal */}
+            <Input 
+              label="Código Postal" 
+              placeholder="Tu código postal"
+              name="codigo_postal"
+              value={formData.codigo_postal}
+              onChange={handleInputChange}
             />
 
             {/* Checkbox */}
@@ -134,16 +305,16 @@ export default function Register() {
             <div className="md:col-span-2 mt-4">
               <button
                 type="submit"
-                disabled={!isChecked}
+                disabled={loading || !isChecked}
                 className={`w-full font-bold py-4 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
-                  isChecked
+                  isChecked && !loading
                     ? 'bg-primary hover:opacity-90 text-background-dark shadow-primary/20 cursor-pointer'
                     : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-50'
                 }`}
               >
-                <span>Registrarse</span>
+                <span>{loading ? 'Registrando...' : 'Registrarse'}</span>
                 <span className="material-symbols-outlined">
-                  person_add
+                  {loading ? 'hourglass_bottom' : 'person_add'}
                 </span>
               </button>
             </div>
