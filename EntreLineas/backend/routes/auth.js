@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../db/index.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -156,6 +157,199 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Error en /api/auth/login:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * GET /api/auth/profile
+ * Obtiene la información del perfil del usuario autenticado
+ * Requiere: Authorization: Bearer <token>
+ */
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(
+      `SELECT id, nombre, email, telefono, direccion, ciudad, departamento, codigo_postal, estado, created_at
+       FROM usuarios
+       WHERE id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const usuario = result.rows[0];
+
+    // Obtener roles
+    const rolesResult = await db.query(
+      `SELECT r.nombre
+       FROM usuario_roles ur
+       JOIN roles r ON ur.rol_id = r.id
+       WHERE ur.usuario_id = $1`,
+      [userId]
+    );
+
+    const roles = rolesResult.rows.map((row) => row.nombre);
+
+    return res.status(200).json({
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      telefono: usuario.telefono,
+      direccion: usuario.direccion,
+      ciudad: usuario.ciudad,
+      departamento: usuario.departamento,
+      codigo_postal: usuario.codigo_postal,
+      roles,
+    });
+  } catch (err) {
+    console.error("Error en /api/auth/profile:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * PUT /api/auth/profile
+ * Actualiza la información del perfil del usuario
+ * Requiere: Authorization: Bearer <token>
+ * Body: { nombre, telefono, direccion, ciudad, departamento, codigo_postal }
+ */
+router.put("/profile", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { nombre, telefono, direccion, ciudad, departamento, codigo_postal } = req.body;
+
+    // Validar que al menos nombre sea proporcionado
+    if (!nombre) {
+      return res.status(400).json({ error: "El nombre es obligatorio" });
+    }
+
+    const result = await db.query(
+      `UPDATE usuarios
+       SET nombre = $1, telefono = $2, direccion = $3, ciudad = $4, departamento = $5, codigo_postal = $6, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7
+       RETURNING id, nombre, email, telefono, direccion, ciudad, departamento, codigo_postal`,
+      [nombre, telefono || null, direccion || null, ciudad || null, departamento || null, codigo_postal || null, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const usuario = result.rows[0];
+
+    return res.status(200).json({
+      message: "Perfil actualizado exitosamente",
+      user: usuario,
+    });
+  } catch (err) {
+    console.error("Error en /api/auth/profile (PUT):", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * PUT /api/auth/change-password
+ * Cambia la contraseña del usuario
+ * Requiere: Authorization: Bearer <token>
+ * Body: { currentPassword, newPassword }
+ */
+router.put("/change-password", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Contraseña actual y nueva son obligatorias" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: "La nueva contraseña debe tener al menos 8 caracteres" });
+    }
+
+    // Obtener usuario actual
+    const userResult = await db.query(
+      "SELECT password_hash FROM usuarios WHERE id = $1",
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const usuario = userResult.rows[0];
+
+    // Verificar contraseña actual
+    const passwordValida = await bcrypt.compare(currentPassword, usuario.password_hash);
+    if (!passwordValida) {
+      return res.status(401).json({ error: "Contraseña actual incorrecta" });
+    }
+
+    // Generar nuevo hash
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar contraseña
+    await db.query(
+      "UPDATE usuarios SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+      [newPasswordHash, userId]
+    );
+
+    return res.status(200).json({
+      message: "Contraseña actualizada exitosamente",
+    });
+  } catch (err) {
+    console.error("Error en /api/auth/change-password:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * DELETE /api/auth/delete-account
+ * Elimina la cuenta del usuario (soft delete - marca como inactivo)
+ * Requiere: Authorization: Bearer <token>
+ * Body: { password } - confirmación de contraseña
+ */
+router.delete("/delete-account", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: "La contraseña es requerida para eliminar la cuenta" });
+    }
+
+    // Obtener usuario actual
+    const userResult = await db.query(
+      "SELECT password_hash, email FROM usuarios WHERE id = $1",
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const usuario = userResult.rows[0];
+
+    // Verificar contraseña
+    const passwordValida = await bcrypt.compare(password, usuario.password_hash);
+    if (!passwordValida) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+
+    // Soft delete - marcar como inactivo
+    await db.query(
+      "UPDATE usuarios SET estado = 'inactivo', updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+      [userId]
+    );
+
+    return res.status(200).json({
+      message: "Cuenta eliminada exitosamente",
+    });
+  } catch (err) {
+    console.error("Error en /api/auth/delete-account:", err);
     return res.status(500).json({ error: "Error interno del servidor." });
   }
 });

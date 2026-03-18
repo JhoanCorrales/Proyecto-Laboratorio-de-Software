@@ -11,25 +11,25 @@ function ShippingSection({ data, onChange }) {
         <FormField
           label="Dirección"
           placeholder="Dirección completa"
-          value={data.direccion}
+          value={data.direccion || ""}
           onChange={(e) => onChange("direccion", e.target.value)}
         />
         <div className="grid grid-cols-2 gap-4">
           <FormField
             label="Ciudad"
-            value={data.ciudad}
+            value={data.ciudad || ""}
             onChange={(e) => onChange("ciudad", e.target.value)}
           />
           <FormField
             label="Departamento"
-            value={data.departamento}
+            value={data.departamento || ""}
             onChange={(e) => onChange("departamento", e.target.value)}
           />
         </div>
         <FormField
           label="Código postal"
-          value={data.codigoPostal}
-          onChange={(e) => onChange("codigoPostal", e.target.value)}
+          value={data.codigo_postal || ""}
+          onChange={(e) => onChange("codigo_postal", e.target.value)}
         />
       </div>
     </div>
