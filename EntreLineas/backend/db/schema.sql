@@ -490,3 +490,20 @@ COMMENT ON TABLE pagos IS 'Registro de transacciones de pago asociadas a compras
 COMMENT ON COLUMN pagos.estado_pago IS 'Estado actual del pago: de utili para conciliación con pasarelas de pago.';
 
 COMMIT;
+
+-- ============================================================================
+-- Cambios a logica de base de datos
+-- ============================================================================
+ALTER TABLE compras 
+DROP CONSTRAINT compras_usuario_id_fkey;
+
+ALTER TABLE compras 
+ADD CONSTRAINT compras_usuario_id_fkey 
+FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE noticias
+DROP CONSTRAINT noticias_creado_por_fkey;
+
+ALTER TABLE noticias
+ADD CONSTRAINT noticias_creado_por_fkey
+FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL;

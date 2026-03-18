@@ -107,7 +107,7 @@ router.post("/login", async (req, res) => {
     if (usuarioResult.rows.length === 0) {
       return res
         .status(401)
-        .json({ error: "Credenciales incorrectas." });
+        .json({ error: "No existe una cuenta con este correo electrónico." });
     }
 
     const usuario = usuarioResult.rows[0];
@@ -321,9 +321,8 @@ router.delete("/delete-account", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "La contraseña es requerida para eliminar la cuenta" });
     }
 
-    // Obtener usuario actual
     const userResult = await db.query(
-      "SELECT password_hash, email FROM usuarios WHERE id = $1",
+      "SELECT password_hash FROM usuarios WHERE id = $1",
       [userId]
     );
 
@@ -331,27 +330,17 @@ router.delete("/delete-account", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const usuario = userResult.rows[0];
-
-    // Verificar contraseña
-    const passwordValida = await bcrypt.compare(password, usuario.password_hash);
+    const passwordValida = await bcrypt.compare(password, userResult.rows[0].password_hash);
     if (!passwordValida) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
-    // Soft delete - marcar como inactivo
-    await db.query(
-      "UPDATE usuarios SET estado = 'inactivo', updated_at = CURRENT_TIMESTAMP WHERE id = $1",
-      [userId]
-    );
+    await db.query("DELETE FROM usuarios WHERE id = $1", [userId]);
 
-    return res.status(200).json({
-      message: "Cuenta eliminada exitosamente",
-    });
+    return res.status(200).json({ message: "Cuenta eliminada exitosamente" });
   } catch (err) {
     console.error("Error en /api/auth/delete-account:", err);
     return res.status(500).json({ error: "Error interno del servidor." });
   }
 });
-
 export default router;
