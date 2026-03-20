@@ -262,7 +262,7 @@ function Catalogue() {
         <footer className="border-t border-neutral-border bg-background-dark/95 py-8 px-6 md:px-20">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2 text-neutral-muted">
-              <span className="material-symbols-outlined">auto_stories</span>
+              <span className="material-symbols-outlined">menu_book</span>
               <span className="font-bold">Entre Líneas</span>
               <span className="mx-2">|</span>
               <span className="text-xs">© 2026 Todos los derechos reservados.</span>

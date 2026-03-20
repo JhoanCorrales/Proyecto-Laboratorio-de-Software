@@ -9,6 +9,7 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import Catalogue from './pages/Catalogue.jsx'
+import BookDetail from './pages/BookDetail.jsx'
 
 const router = createBrowserRouter([
   {
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
   {
     path: "/catalogue",
     element: <Catalogue />,
+  },
+  {
+    path: "/catalogue/:bookTitle/details",
+    element: <BookDetail />,
   }
 ]);
 

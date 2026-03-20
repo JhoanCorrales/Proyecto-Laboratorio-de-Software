@@ -48,7 +48,9 @@ function Navbar() {
             <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-background-dark">3</span>
           </button>
           <button className="p-2 hover:bg-primary/10 rounded-full transition-colors">
-            <span className="material-symbols-outlined">account_circle</span>
+            <a className="material-symbols-outlined" href="/profile/edit">
+              account_circle
+            </a>
           </button>
         </div>
       </div>

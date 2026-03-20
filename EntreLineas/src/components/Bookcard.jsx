@@ -1,6 +1,13 @@
+import { useNavigate } from "react-router-dom";
+
 function BookCard({ title, author, price, img, agotado = false }) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/catalogue/${encodeURIComponent(title)}/details`);
+  };
   return (
-    <div className={`group flex flex-col bg-neutral-dark border border-neutral-border rounded-xl overflow-hidden shadow-xl transition-all duration-300
+    <div onClick={handleClick} className={`group flex flex-col bg-neutral-dark border border-neutral-border rounded-xl overflow-hidden shadow-xl transition-all duration-300
       ${agotado ? "opacity-80 grayscale-[0.5]" : "hover:shadow-primary/5 hover:-translate-y-1"}`}
     >
       {/* Imagen */}
