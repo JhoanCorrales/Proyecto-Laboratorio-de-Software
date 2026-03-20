@@ -8,6 +8,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import EditProfile from './pages/EditProfile.jsx'
+import Catalogue from './pages/Catalogue.jsx'
 
 const router = createBrowserRouter([
   {
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
   {
     path: "/profile/edit",
     element: <EditProfile />,
+  },
+  {
+    path: "/catalogue",
+    element: <Catalogue />,
   }
 ]);
 
