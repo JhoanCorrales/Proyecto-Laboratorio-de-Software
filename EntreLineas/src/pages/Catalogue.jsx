@@ -4,30 +4,39 @@ import Navbar from "../components/Navbar";
 import BookCard from "../components/BookCard";
 
 const PAGE_SIZE = 20;
+const USD_TO_COP = 4000;
 
-const CATEGORIES = [
-  { label: "Todos", query: "libros" },
-  { label: "Ficción", query: "subject:fiction" },
-  { label: "No Ficción", query: "subject:nonfiction" },
-  { label: "Ciencia Ficción", query: "subject:science+fiction" },
-  { label: "Fantasía", query: "subject:fantasy" },
-  { label: "Misterio", query: "subject:mystery" },
-  { label: "Autoayuda", query: "subject:self-help" },
-  { label: "Infantil", query: "subject:juvenile" },
-  { label: "Historia", query: "subject:history" },
-];
+function generateRandomPrice(title = "") {
+  const hash = (title).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const base = (hash % 50) + 15;
+  return Math.round(base * USD_TO_COP);
+}
 
 function parseBook(item) {
-  const info = item.volumeInfo ?? {};
+  if (!item.cover_i) return null; // sin portada → ignorar
+
   return {
-    id: item.id,
-    title: info.title ?? "Sin título",
-    author: info.authors?.[0] ?? "Autor desconocido",
-    price: `$${((info.pageCount ?? 200) % 50 + 10).toFixed(2)}`,
-    img: info.imageLinks?.thumbnail?.replace("http://", "https://") ?? null,
+    id: item.key ?? item.title,
+    title: item.title ?? "Sin título",
+    author: item.author_name?.[0] ?? "Autor desconocido",
+    price: `$${generateRandomPrice(item.title).toLocaleString("es-CO")}`,
+    img: `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`,
     agotado: false,
   };
 }
+
+const CATEGORIES = [
+  { label: "Todos", query: "fiction" },
+  { label: "Ficción", query: "subject:fiction" },
+  { label: "No Ficción", query: "subject:nonfiction" },
+  { label: "Ciencia Ficción", query: "subject:science_fiction" },
+  { label: "Fantasía", query: "subject:fantasy" },
+  { label: "Misterio", query: "subject:mystery" },
+  { label: "Autoayuda", query: "subject:self-help" },
+  { label: "Infantil", query: "subject:children" },
+  { label: "Historia", query: "subject:history" },
+];
+
 
 function Catalogue() {
   const [books, setBooks] = useState([]);
@@ -45,14 +54,13 @@ function Catalogue() {
 
   const buildUrl = useCallback(
     (pageNum) => {
-      const base = "https://www.googleapis.com/books/v1/volumes";
-      const q = search.trim() || activeCategory.query;
+      const base = "https://openlibrary.org/search.json";
+      const q = search.trim() || activeCategory.query || "fiction";
       const params = new URLSearchParams({
         q,
-        maxResults: PAGE_SIZE,
-        startIndex: (pageNum - 1) * PAGE_SIZE,
-        printType: "books",
-        langRestrict: "es",
+        limit: PAGE_SIZE,
+        page: pageNum,
+        fields: "key,title,author_name,cover_i,isbn,first_publish_year",
       });
       return `${base}?${params}`;
     },
@@ -81,14 +89,16 @@ function Catalogue() {
         if (!res.ok) throw new Error("Error al obtener libros");
         const data = await res.json();
 
-        const parsed = (data.items ?? [])
-          .filter((d) => d.volumeInfo?.imageLinks?.thumbnail)
-          .map(parseBook);
+        const parsed = (data.docs ?? [])
+          .map(parseBook)
+          .filter(Boolean) // elimina los null (sin portada)
+          .slice(0, PAGE_SIZE);
 
         setBooks(parsed);
-        setTotalResults(data.totalItems ?? 0);
-        setHasMore(parsed.length === PAGE_SIZE);
+        setTotalResults(data.numFound ?? 0);
+        setHasMore((data.docs ?? []).length >= PAGE_SIZE);
       } catch (err) {
+        console.error("Error al cargar libros:", err);
         setError("No se pudieron cargar los libros. Intenta de nuevo.");
       } finally {
         setLoading(false);
@@ -109,13 +119,14 @@ function Catalogue() {
       if (!res.ok) throw new Error("Error al cargar más libros");
       const data = await res.json();
 
-      const parsed = (data.items ?? [])
-        .filter((d) => d.volumeInfo?.imageLinks?.thumbnail)
-        .map(parseBook);
+      const parsed = (data.docs ?? [])
+        .map(parseBook)
+        .filter(Boolean) // elimina los null (sin portada)
+        .slice(0, PAGE_SIZE);
 
       setBooks((prev) => [...prev, ...parsed]);
       setPage(nextPage);
-      setHasMore(parsed.length === PAGE_SIZE);
+      setHasMore((data.docs ?? []).length >= PAGE_SIZE);
     } catch (err) {
       setError("Error al cargar más libros. Intenta de nuevo.");
     } finally {

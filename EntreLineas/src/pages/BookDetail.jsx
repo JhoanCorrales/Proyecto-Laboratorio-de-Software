@@ -1,6 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+
+const USD_TO_COP = 4000;
+
+function generateRandomPrice(seed) {
+  // Precio determinista basado en el título para que no cambie entre renders
+  const hash = seed.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const base = (hash % 50) + 15;
+  return Math.round(base * USD_TO_COP);
+}
 
 function StarRating({ rating }) {
   return (
@@ -9,7 +18,11 @@ function StarRating({ rating }) {
         const filled = rating >= star;
         const half = !filled && rating >= star - 0.5;
         return (
-          <span key={star} className="material-symbols-outlined fill-1" style={{ fontVariationSettings: "'FILL' 1" }}>
+          <span
+            key={star}
+            className="material-symbols-outlined"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
             {filled ? "star" : half ? "star_half" : "star_outline"}
           </span>
         );
@@ -20,17 +33,25 @@ function StarRating({ rating }) {
 
 function RelatedBookCard({ book }) {
   const navigate = useNavigate();
-  const img = book.volumeInfo?.imageLinks?.thumbnail?.replace("http://", "https://");
-  const title = book.volumeInfo?.title ?? "Sin título";
-  const author = book.volumeInfo?.authors?.[0] ?? "Autor desconocido";
-  const price = `$${((book.volumeInfo?.pageCount ?? 200) % 50 + 10).toFixed(2)}`;
+  // cover_i es el campo correcto en search.json
+  const img = book.cover_i
+    ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+    : null;
+  const title = book.title ?? "Sin título";
+  const author = book.author_name?.[0] ?? "Autor desconocido";
+  const priceCOP = generateRandomPrice(title);
+  const price = `$${priceCOP.toLocaleString("es-CO")}`;
 
   if (!img) return null;
 
   return (
     <div
       className="group flex flex-col gap-3 cursor-pointer"
-      onClick={() => navigate(`/catalogue/${encodeURIComponent(title)}/details`, { state: { bookId: book.id } })}
+      onClick={() =>
+        navigate(`/catalogue/${encodeURIComponent(title)}/details`, {
+          state: { bookKey: book.key },
+        })
+      }
     >
       <div
         className="aspect-[3/4] bg-cover bg-center rounded-lg shadow-md group-hover:shadow-primary/20 group-hover:scale-[1.02] transition-all border border-neutral-border"
@@ -68,48 +89,79 @@ function SkeletonDetail() {
 function BookDetail() {
   const { bookTitle } = useParams();
   const navigate = useNavigate();
-  const [book, setBook] = useState(null);
+
+  const [searchDoc, setSearchDoc] = useState(null);  // datos de /search.json
+  const [workData, setWorkData] = useState(null);     // datos de /works/{key}.json
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImg, setSelectedImg] = useState(null);
 
+  // Precio estable — se calcula una sola vez cuando llega el título
+  const priceRef = useRef(null);
+
   useEffect(() => {
+    if (!bookTitle) return;
+
     const fetchBook = async () => {
       setLoading(true);
       setError("");
+      setWorkData(null);
+      setSearchDoc(null);
 
       try {
-        // Buscar el libro por título en Google Books
-        const res = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(bookTitle)}&maxResults=1&printType=books`
+        // 1. Buscar por título en search.json
+        const searchRes = await fetch(
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(
+            bookTitle
+          )}&limit=1&fields=key,title,author_name,cover_i,isbn,first_publish_year,subject,language,number_of_pages_median,publisher`
         );
-        if (!res.ok) throw new Error("Error al obtener el libro");
-        const data = await res.json();
+        if (!searchRes.ok) throw new Error("Error al buscar el libro");
+        const searchData = await searchRes.json();
 
-        if (!data.items?.length) throw new Error("Libro no encontrado");
+        if (!searchData.docs?.length) throw new Error("Libro no encontrado");
 
-        const item = data.items[0];
-        setBook(item);
+        const doc = searchData.docs[0];
+        setSearchDoc(doc);
 
-        const info = item.volumeInfo;
-        const mainImg =
-          info.imageLinks?.extraLarge ||
-          info.imageLinks?.large ||
-          info.imageLinks?.medium ||
-          info.imageLinks?.thumbnail;
-        setSelectedImg(mainImg?.replace("http://", "https://") ?? null);
+        // Precio fijo basado en el título
+        priceRef.current = generateRandomPrice(doc.title ?? bookTitle);
 
-        // Libros relacionados por autor o categoría
-        const relatedQuery = info.authors?.[0] ?? info.categories?.[0] ?? bookTitle;
+        // Imagen principal — cover_i es el campo correcto
+        const mainImg = doc.cover_i
+          ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
+          : null;
+        setSelectedImg(mainImg);
+
+        // 2. Obtener descripción desde /works/{key}.json
+        if (doc.key) {
+          try {
+            const workRes = await fetch(
+              `https://openlibrary.org${doc.key}.json`
+            );
+            if (workRes.ok) {
+              const work = await workRes.json();
+              setWorkData(work);
+            }
+          } catch {
+            // Si falla el work, no es crítico — seguimos sin sinopsis
+          }
+        }
+
+        // 3. Libros relacionados
+        const relQuery = doc.author_name?.[0] ?? doc.subject?.[0] ?? bookTitle;
         const relRes = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(relatedQuery)}&maxResults=8&printType=books`
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(
+            relQuery
+          )}&limit=10&fields=key,title,author_name,cover_i`
         );
-        const relData = await relRes.json();
-        const filtered = (relData.items ?? [])
-          .filter((b) => b.id !== item.id && b.volumeInfo?.imageLinks?.thumbnail)
-          .slice(0, 5);
-        setRelated(filtered);
+        if (relRes.ok) {
+          const relData = await relRes.json();
+          const filtered = (relData.docs ?? [])
+            .filter((b) => b.key !== doc.key && b.cover_i)
+            .slice(0, 5);
+          setRelated(filtered);
+        }
       } catch (err) {
         setError("No se pudo cargar la información del libro.");
       } finally {
@@ -117,24 +169,32 @@ function BookDetail() {
       }
     };
 
-    if (bookTitle) fetchBook();
+    fetchBook();
   }, [bookTitle]);
 
-  const info = book?.volumeInfo ?? {};
-  const price = `$${((info.pageCount ?? 200) % 50 + 10).toFixed(2)}`;
-  const originalPrice = `$${((info.pageCount ?? 200) % 50 + 10 + 7).toFixed(2)}`;
-  const rating = info.averageRating ?? 4;
-  const ratingsCount = info.ratingsCount ?? 0;
-  const stock = Math.floor((info.pageCount ?? 300) % 20) + 5;
+  // Sinopsis — puede venir como string o como objeto { value: "..." }
+  const getSynopsis = () => {
+    if (!workData?.description) return "No hay sinopsis disponible para este libro.";
+    if (typeof workData.description === "string") return workData.description;
+    if (typeof workData.description === "object") return workData.description.value ?? "No hay sinopsis disponible.";
+    return "No hay sinopsis disponible para este libro.";
+  };
 
-  const thumbnails = [
-    info.imageLinks?.thumbnail,
-    info.imageLinks?.small,
-    info.imageLinks?.medium,
-    info.imageLinks?.large,
-  ]
-    .filter(Boolean)
-    .map((u) => u.replace("http://", "https://"));
+  const doc = searchDoc ?? {};
+  const priceCOP = priceRef.current ?? generateRandomPrice(bookTitle);
+  const price = `$${priceCOP.toLocaleString("es-CO")}`;
+  const originalPrice = `$${Math.round(priceCOP * 1.2).toLocaleString("es-CO")}`;
+  const rating = 4; // Open Library search no trae rating directamente
+  const stock = ((doc.number_of_pages_median ?? 300) % 20) + 5; // determinista
+
+  const langMap = { eng: "Inglés", spa: "Español", fre: "Francés", ger: "Alemán", por: "Portugués" };
+  const language = doc.language?.[0] ? (langMap[doc.language[0]] ?? doc.language[0]) : "No disponible";
+
+  const thumbnails = doc.cover_i
+    ? [
+        `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`,
+      ]
+    : [];
 
   return (
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
@@ -152,7 +212,7 @@ function BookDetail() {
           </Link>
           <span className="text-neutral-muted material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="text-slate-900 dark:text-white text-sm font-semibold truncate max-w-[200px]">
-            {loading ? "Cargando..." : info.title ?? bookTitle}
+            {loading ? "Cargando..." : doc.title ?? bookTitle}
           </span>
         </nav>
 
@@ -172,28 +232,29 @@ function BookDetail() {
 
         {loading && <SkeletonDetail />}
 
-        {!loading && book && (
+        {!loading && searchDoc && (
           <>
             {/* Título móvil */}
             <h1 className="text-3xl font-bold mb-6 text-slate-900 dark:text-white md:hidden">
-              {info.title}
+              {doc.title}
             </h1>
 
             {/* Grid principal */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-              {/* Columna izquierda — imagen */}
+              {/* Columna izquierda */}
               <div className="md:col-span-5 flex flex-col gap-4">
-                <div className="relative group">
-                  <div
-                    className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-xl shadow-2xl border border-slate-200 dark:border-neutral-border"
-                    style={{ backgroundImage: selectedImg ? `url('${selectedImg}')` : "none" }}
-                  >
-                    {!selectedImg && (
-                      <div className="w-full h-full flex items-center justify-center bg-neutral-dark rounded-xl">
-                        <span className="material-symbols-outlined text-6xl text-neutral-muted">menu_book</span>
-                      </div>
-                    )}
-                  </div>
+                <div className="relative">
+                  {selectedImg ? (
+                    <div
+                      className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-xl shadow-2xl border border-slate-200 dark:border-neutral-border"
+                      style={{ backgroundImage: `url('${selectedImg}')` }}
+                    />
+                  ) : (
+                    <div className="w-full aspect-[3/4] rounded-xl shadow-2xl border border-neutral-border bg-neutral-dark flex flex-col items-center justify-center gap-4">
+                      <span className="material-symbols-outlined text-8xl text-neutral-muted">menu_book</span>
+                      <p className="text-neutral-muted text-sm">Sin portada disponible</p>
+                    </div>
+                  )}
                   <div className="absolute top-4 left-4">
                     <span className="bg-primary text-background-dark text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
                       {stock > 0 ? "Disponible" : "Agotado"}
@@ -201,7 +262,7 @@ function BookDetail() {
                   </div>
                 </div>
 
-                {/* Thumbnails */}
+                {/* Thumbnails — L del mismo cover */}
                 {thumbnails.length > 0 && (
                   <div className="grid grid-cols-4 gap-3">
                     {thumbnails.map((url, i) => (
@@ -210,8 +271,8 @@ function BookDetail() {
                         onClick={() => setSelectedImg(url)}
                         className={`aspect-square rounded-lg bg-cover bg-center cursor-pointer transition-opacity
                           ${selectedImg === url
-                            ? "border-2 border-primary"
-                            : "border border-neutral-border opacity-70 hover:opacity-100"
+                            ? "border-2 border-primary opacity-100"
+                            : "border border-neutral-border opacity-60 hover:opacity-100"
                           }`}
                         style={{ backgroundImage: `url('${url}')` }}
                       />
@@ -220,14 +281,14 @@ function BookDetail() {
                 )}
               </div>
 
-              {/* Columna derecha — info */}
+              {/* Columna derecha */}
               <div className="md:col-span-7 flex flex-col">
                 <div className="hidden md:block mb-2">
                   <span className="text-primary font-medium tracking-wide uppercase text-sm">
-                    {info.categories?.[0] ?? "Literatura"}
+                    {doc.subject?.[0] ?? "Literatura"}
                   </span>
                   <h1 className="text-4xl lg:text-5xl font-extrabold mt-1 text-slate-900 dark:text-white">
-                    {info.title}
+                    {doc.title}
                   </h1>
                 </div>
 
@@ -236,17 +297,15 @@ function BookDetail() {
                   <div className="flex items-center gap-2">
                     <span className="text-neutral-muted text-lg">Autor:</span>
                     <span className="text-slate-900 dark:text-slate-100 font-semibold text-lg underline decoration-primary/50">
-                      {info.authors?.[0] ?? "Desconocido"}
+                      {doc.author_name?.[0] ?? "Desconocido"}
                     </span>
                   </div>
 
                   {/* Rating y stock */}
-                  <div className="flex items-center gap-6 py-2">
+                  <div className="flex flex-wrap items-center gap-6 py-2">
                     <div className="flex items-center gap-2">
                       <StarRating rating={rating} />
-                      <span className="text-neutral-muted font-medium">
-                        ({ratingsCount > 0 ? `${ratingsCount} reseñas` : "Sin reseñas"})
-                      </span>
+                      <span className="text-neutral-muted font-medium text-sm">Sin reseñas</span>
                     </div>
                     <div className="flex items-center gap-2 text-neutral-muted">
                       <span className="material-symbols-outlined text-green-500">inventory_2</span>
@@ -256,30 +315,17 @@ function BookDetail() {
 
                   {/* Info grid */}
                   <div className="grid grid-cols-2 gap-y-4 py-6 border-y border-slate-200 dark:border-neutral-border">
-                    <div className="flex flex-col">
-                      <span className="text-neutral-muted text-xs uppercase font-bold tracking-tighter">Editorial</span>
-                      <span className="text-slate-900 dark:text-slate-100 font-medium">
-                        {info.publisher ?? "No disponible"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-neutral-muted text-xs uppercase font-bold tracking-tighter">Género</span>
-                      <span className="text-slate-900 dark:text-slate-100 font-medium">
-                        {info.categories?.[0] ?? "No disponible"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-neutral-muted text-xs uppercase font-bold tracking-tighter">ISBN</span>
-                      <span className="text-slate-900 dark:text-slate-100 font-medium">
-                        {info.industryIdentifiers?.[0]?.identifier ?? "No disponible"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-neutral-muted text-xs uppercase font-bold tracking-tighter">Idioma</span>
-                      <span className="text-slate-900 dark:text-slate-100 font-medium">
-                        {info.language === "es" ? "Español" : info.language === "en" ? "Inglés" : info.language ?? "No disponible"}
-                      </span>
-                    </div>
+                    {[
+                      ["Editorial", doc.publisher?.[0] ?? "No disponible"],
+                      ["Género", doc.subject?.[0] ?? "No disponible"],
+                      ["ISBN", doc.isbn?.[0] ?? "No disponible"],
+                      ["Idioma", language],
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex flex-col">
+                        <span className="text-neutral-muted text-xs uppercase font-bold tracking-tighter">{label}</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-medium truncate">{value}</span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Precio */}
@@ -292,7 +338,7 @@ function BookDetail() {
                   </div>
 
                   {/* Botones */}
-                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <button className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
                       <span className="material-symbols-outlined">shopping_cart</span>
                       Agregar al carrito
@@ -319,9 +365,7 @@ function BookDetail() {
                   Sinopsis del libro
                 </h3>
                 <p className="text-slate-700 dark:text-neutral-muted leading-relaxed text-lg max-w-4xl">
-                  {info.description
-                    ? info.description.replace(/<[^>]*>/g, "") // quita HTML tags que a veces viene de la API
-                    : "No hay sinopsis disponible para este libro."}
+                  {getSynopsis()}
                 </p>
               </div>
 
@@ -335,10 +379,10 @@ function BookDetail() {
                   <table className="w-full text-left">
                     <tbody className="divide-y divide-slate-200 dark:divide-neutral-border">
                       {[
-                        ["Número de páginas", info.pageCount ? `${info.pageCount} páginas` : "No disponible"],
-                        ["Idioma", info.language === "es" ? "Español" : info.language === "en" ? "Inglés" : info.language ?? "No disponible"],
-                        ["Fecha de publicación", info.publishedDate ?? "No disponible"],
-                        ["Editorial", info.publisher ?? "No disponible"],
+                        ["Número de páginas", doc.number_of_pages_median ? `${doc.number_of_pages_median} páginas` : "No disponible"],
+                        ["Idioma", language],
+                        ["Año de publicación", doc.first_publish_year ?? "No disponible"],
+                        ["Editorial", doc.publisher?.[0] ?? "No disponible"],
                       ].map(([label, value]) => (
                         <tr key={label} className="flex justify-between">
                           <td className="text-neutral-muted py-3">{label}</td>
@@ -349,7 +393,7 @@ function BookDetail() {
                   </table>
                 </div>
 
-                {/* Banner envío */}
+                {/* Envío */}
                 <div className="flex flex-col justify-center items-center bg-background-light dark:bg-background-dark p-6 rounded-xl border border-primary/20">
                   <span className="material-symbols-outlined text-primary text-5xl mb-4">local_shipping</span>
                   <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Envío Gratuito</h4>
@@ -363,7 +407,7 @@ function BookDetail() {
               </div>
             </div>
 
-            {/* Libros relacionados */}
+            {/* Relacionados */}
             {related.length > 0 && (
               <section className="mt-20 mb-12">
                 <div className="flex justify-between items-end mb-8">
@@ -371,16 +415,13 @@ function BookDetail() {
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Libros relacionados</h2>
                     <p className="text-neutral-muted">Basado en tus intereses literarios</p>
                   </div>
-                  <Link
-                    to="/catalogue"
-                    className="text-primary font-semibold hover:underline flex items-center gap-1"
-                  >
+                  <Link to="/catalogue" className="text-primary font-semibold hover:underline flex items-center gap-1">
                     Ver todos <span className="material-symbols-outlined text-sm">arrow_forward</span>
                   </Link>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                   {related.map((b) => (
-                    <RelatedBookCard key={b.id} book={b} />
+                    <RelatedBookCard key={b.key} book={b} />
                   ))}
                 </div>
               </section>
@@ -418,7 +459,11 @@ function BookDetail() {
             <h4 className="text-slate-900 dark:text-white font-bold mb-6">Newsletter</h4>
             <p className="text-neutral-muted text-sm mb-4">Suscríbete para recibir recomendaciones y ofertas exclusivas.</p>
             <div className="flex gap-2">
-              <input className="bg-white dark:bg-background-dark border border-neutral-border rounded-lg text-sm flex-1 px-3 focus:ring-1 focus:ring-primary outline-none" placeholder="Email" type="email" />
+              <input
+                className="bg-white dark:bg-background-dark border border-neutral-border rounded-lg text-sm flex-1 px-3 py-2 focus:ring-1 focus:ring-primary outline-none"
+                placeholder="Email"
+                type="email"
+              />
               <button className="bg-primary text-background-dark px-4 py-2 rounded-lg font-bold text-sm">Unirse</button>
             </div>
           </div>
