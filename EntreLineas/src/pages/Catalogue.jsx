@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import BookCard from "../components/BookCard";
@@ -13,44 +13,46 @@ function generateRandomPrice(title = "") {
 }
 
 function parseBook(item) {
-  if (!item.cover_i) return null; // sin portada → ignorar
-
+  if (!item.cover_i) return null;
   return {
     id: item.key ?? item.title,
     title: item.title ?? "Sin título",
     author: item.author_name?.[0] ?? "Autor desconocido",
     price: `$${generateRandomPrice(item.title).toLocaleString("es-CO")}`,
+    priceRaw: generateRandomPrice(item.title),
     img: `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`,
     agotado: false,
   };
 }
 
-const CATEGORIES = [
-  { label: "Todos", query: "fiction" },
-  { label: "Ficción", query: "subject:fiction" },
-  { label: "No Ficción", query: "subject:nonfiction" },
-  { label: "Ciencia Ficción", query: "subject:science_fiction" },
-  { label: "Fantasía", query: "subject:fantasy" },
-  { label: "Misterio", query: "subject:mystery" },
-  { label: "Autoayuda", query: "subject:self-help" },
-  { label: "Infantil", query: "subject:children" },
-  { label: "Historia", query: "subject:history" },
-];
-
-
 function Catalogue() {
+  const [searchParams] = useSearchParams();
+  const debounceRef = useRef(null);
+
+  // ← Inicializar desde URL directamente para evitar doble render al volver de BookDetail
+  const initialQ = searchParams.get("q") ?? "";
+  const initialCat = searchParams.get("cat");
+  const initialPriceMin = searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : null;
+  const initialPriceMax = searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : null;
+  const initialDisponibles = searchParams.get("disponibles") === "1";
+
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [inputValue, setInputValue] = useState("");
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
+  const [search, setSearch] = useState(initialQ);
+  const [inputValue, setInputValue] = useState(initialQ);
+  const [activeCategory, setActiveCategory] = useState(
+    initialCat
+      ? { label: "Filtro", query: initialCat }
+      : { label: "Todos", query: "fiction" }
+  );
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
-
-  const [searchParams] = useSearchParams();
+  const [priceMin, setPriceMin] = useState(initialPriceMin);
+  const [priceMax, setPriceMax] = useState(initialPriceMax);
+  const [soloDisponibles, setSoloDisponibles] = useState(initialDisponibles);
 
   const buildUrl = useCallback(
     (pageNum) => {
@@ -67,13 +69,26 @@ function Catalogue() {
     [search, activeCategory]
   );
 
-  // Leer query de la URL al montar
+  // Solo maneja cambios posteriores de URL (cuando el usuario aplica filtros desde Navbar)
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) {
-      setInputValue(q);
-      setSearch(q);
+    const q = searchParams.get("q") ?? "";
+    const cat = searchParams.get("cat");
+    const min = searchParams.get("priceMin");
+    const max = searchParams.get("priceMax");
+    const disponibles = searchParams.get("disponibles");
+
+    setInputValue(q);
+    setSearch(q);
+
+    if (cat) {
+      setActiveCategory({ label: "Filtro", query: cat });
+    } else if (!q) {
+      setActiveCategory({ label: "Todos", query: "fiction" });
     }
+
+    setPriceMin(min ? Number(min) : null);
+    setPriceMax(max ? Number(max) : null);
+    setSoloDisponibles(disponibles === "1");
   }, [searchParams]);
 
   // Carga inicial / cuando cambia búsqueda o categoría
@@ -91,11 +106,11 @@ function Catalogue() {
 
         const parsed = (data.docs ?? [])
           .map(parseBook)
-          .filter(Boolean) // elimina los null (sin portada)
+          .filter(Boolean)
           .slice(0, PAGE_SIZE);
 
         setBooks(parsed);
-        setTotalResults(data.numFound ?? 0);
+        setTotalResults(parsed.length);
         setHasMore((data.docs ?? []).length >= PAGE_SIZE);
       } catch (err) {
         console.error("Error al cargar libros:", err);
@@ -121,7 +136,7 @@ function Catalogue() {
 
       const parsed = (data.docs ?? [])
         .map(parseBook)
-        .filter(Boolean) // elimina los null (sin portada)
+        .filter(Boolean)
         .slice(0, PAGE_SIZE);
 
       setBooks((prev) => [...prev, ...parsed]);
@@ -134,17 +149,34 @@ function Catalogue() {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setSearch(inputValue);
-    setActiveCategory(CATEGORIES[0]);
+  // Búsqueda dinámica con debounce
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInputValue(val);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(val);
+      setActiveCategory({ label: "Todos", query: "fiction" });
+    }, 500);
   };
 
-  const handleCategory = (cat) => {
-    setActiveCategory(cat);
-    setSearch("");
-    setInputValue("");
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSearch(inputValue);
+    setActiveCategory({ label: "Todos", query: "fiction" });
   };
+
+  // Filtros locales de precio y disponibilidad
+  const displayBooks = books.filter((book) => {
+    if (priceMin !== null && book.priceRaw < priceMin) return false;
+    if (priceMax !== null && book.priceRaw > priceMax) return false;
+    if (soloDisponibles && book.agotado) return false;
+    return true;
+  });
+
+  const hayFiltrosLocales = priceMin !== null || priceMax !== null || soloDisponibles;
 
   return (
     <div className="bg-background-dark font-display text-slate-100 min-h-screen relative">
@@ -164,33 +196,12 @@ function Catalogue() {
               className="w-full bg-neutral-dark border border-neutral-border rounded-lg py-2 pl-10 pr-4 text-slate-100 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary transition-all"
               placeholder="Buscar libros..."
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={handleInputChange}
             />
           </form>
         </div>
 
-        {/* Filtros */}
-        <div className="flex gap-3 px-6 md:px-20 py-4 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.label}
-              onClick={() => handleCategory(cat)}
-              className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors
-                ${activeCategory.label === cat.label && !search
-                  ? "bg-primary text-background-dark"
-                  : "bg-neutral-dark border border-neutral-border text-slate-300 hover:text-white"
-                }`}
-            >
-              {cat.label === "Todos" && (
-                <span className="material-symbols-outlined text-sm">filter_list</span>
-              )}
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
         <main className="px-6 md:px-20 py-6 flex-1">
-          {/* Encabezado */}
           <div className="mb-6">
             <p className="text-neutral-muted text-sm font-medium uppercase tracking-widest">
               {search
@@ -199,19 +210,17 @@ function Catalogue() {
             </p>
             <h3 className="text-slate-100 text-2xl font-bold mt-1">
               {loading
-                ? "Buscando libros..."
-                : `${totalResults.toLocaleString()} libros encontrados`}
+                ? "Buscando libros, esto puede tardar unos momentos..."
+                : `${displayBooks.length.toLocaleString()} libros encontrados`}
             </h3>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="p-4 bg-red-900/30 text-red-400 rounded-lg border border-red-600/30 mb-6">
               {error}
             </div>
           )}
 
-          {/* Skeleton */}
           {loading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {Array.from({ length: 20 }).map((_, i) => (
@@ -228,26 +237,27 @@ function Catalogue() {
             </div>
           )}
 
-          {/* Grid */}
-          {!loading && books.length > 0 && (
+          {!loading && displayBooks.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {books.map((book, i) => (
+              {displayBooks.map((book, i) => (
                 <BookCard key={`${book.id}-${i}`} {...book} />
               ))}
             </div>
           )}
 
-          {/* Sin resultados */}
-          {!loading && books.length === 0 && !error && (
+          {!loading && displayBooks.length === 0 && !error && (
             <div className="flex flex-col items-center justify-center py-24 gap-4 text-neutral-muted">
               <span className="material-symbols-outlined text-6xl">search_off</span>
               <p className="text-lg font-semibold">No se encontraron libros</p>
-              <p className="text-sm">Intenta con otro término o categoría</p>
+              <p className="text-sm">
+                {hayFiltrosLocales
+                  ? "Ningún libro coincide con los filtros aplicados"
+                  : "Intenta con otro término o categoría"}
+              </p>
             </div>
           )}
 
-          {/* Cargar más */}
-          {!loading && hasMore && books.length > 0 && (
+          {!loading && hasMore && displayBooks.length > 0 && !hayFiltrosLocales && (
             <div className="flex justify-center mt-12 mb-8">
               <button
                 onClick={handleLoadMore}

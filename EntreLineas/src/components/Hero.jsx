@@ -38,12 +38,10 @@ function Hero() {
             highlightClassName="text-primary font-bold"
           />
           <div className="flex flex-wrap gap-4 pt-4">
-            <button className="px-8 py-4 bg-primary text-background-dark font-bold rounded-lg hover:brightness-110 transition-all flex items-center gap-2">
-              <a href="/catalogue" className="flex items-center gap-2">
-                Explorar Catálogo
-              </a>
+            <a href="/catalogue" className="px-8 py-4 bg-primary text-background-dark font-bold rounded-lg hover:brightness-110 transition-all flex items-center gap-2">
+              Explorar Catálogo
               <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
+            </a>
             <button className="px-8 py-4 bg-neutral-dark text-white border border-primary/30 font-bold rounded-lg hover:bg-neutral-dark/80 transition-all">
               Ver Novedades
             </button>

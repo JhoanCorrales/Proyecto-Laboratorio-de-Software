@@ -112,7 +112,7 @@ function BookDetail() {
       try {
         // 1. Buscar por título en search.json
         const searchRes = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(
+          `https://corsproxy.io/?https://openlibrary.org/search.json?q=${encodeURIComponent(
             bookTitle
           )}&limit=1&fields=key,title,author_name,cover_i,isbn,first_publish_year,subject,language,number_of_pages_median,publisher`
         );
@@ -137,7 +137,7 @@ function BookDetail() {
         if (doc.key) {
           try {
             const workRes = await fetch(
-              `https://openlibrary.org${doc.key}.json`
+              `https://corsproxy.io/?https://openlibrary.org${doc.key}.json`
             );
             if (workRes.ok) {
               const work = await workRes.json();
@@ -151,7 +151,7 @@ function BookDetail() {
         // 3. Libros relacionados
         const relQuery = doc.author_name?.[0] ?? doc.subject?.[0] ?? bookTitle;
         const relRes = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(
+          `https://corsproxy.io/?https://openlibrary.org/search.json?q=${encodeURIComponent(
             relQuery
           )}&limit=10&fields=key,title,author_name,cover_i`
         );
