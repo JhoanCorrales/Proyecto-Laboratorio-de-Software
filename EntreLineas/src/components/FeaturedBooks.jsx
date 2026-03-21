@@ -1,30 +1,108 @@
+import { useState, useEffect } from "react";
 import BookCard from "./BookCard";
 
-const BOOKS = [
-  { title: "La Sombra del Viento", author: "Carlos Ruiz Zafón", price: "$18.99", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAAe2B9xQRXEWdR6W0PdQLgpZhbTgk9rwh8eDf4S-av2LKkjM7Jb8wpnVXUNP1rZ-c9eXNzrSuhp6RHqIZb3glwBWYngcHM0sCdAVxDbwRacd80CJk25uIEvotZ6nJli93G9MxwX9k9NVFmDoZsEuZAlrixE0De_UYSR_6m41S5GCnJ8OvEQ642fNLOtBGfiYCV6gVXO5dnMWv0ZV7Z5-B8nD-u36uN2zJrT6biODWdQA9CXvw1fLIwKlJz-cvDD4q30mfwuHrCQS8" },
-  { title: "Cien Años de Soledad", author: "G. García Márquez", price: "$22.50", agotado: true, img: "https://lh3.googleusercontent.com/aida-public/AB6AXuADqVgK871wlUNSdhx5NXgk8kIJEq6V6uEOZuQ0OyopwtfoKTnGH724aZa14aCZENUQat41TbH_v6qUqvhgUoUfgxObptsB1sWirj6PJ2Y6FfRUGTrxh-L4-cxGeaRD5QYd1FnWcUdx_BtjtDR-JAOCtNkfQ3_tit1KEbXQoRCRyhpbO6cG0aWqtLs1J0Ys-kneeckfqNpOOvIHFmHHFIPT9PpgqUOQY3rmRXtzTmWjyp5p2FgrDIWoHoVUhPVr2PoTiZn768HiRv8" },
-  { title: "El Psicoanalista", author: "John Katzenbach", price: "$15.00", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBkT8-nP22HJ4jzbNMffwMrg6Z1TwznXZkbfOlJCHzVzyvvIKa7-2llltZEyiiTEZ5fZRITLp10kz3qEgG6zWjE9I9w86g7rGuUL5EvWtD-mtMuLa4qfUg9BpKV510XzJQ6dgv4UI6xp10WcTM23QGI2g6cW5nHD9kUamro88Owya6PMTVAYwFX-Mz7duZQnTcrE4xwI0xEQrf2nasNKIuzbmcIHRSDmF-QKDNKQBIH5T4RgbP-gNqyQA-5cSLx_3cNLFOPr-YXo8s" },
-  { title: "Elantris", author: "Brandon Sanderson", price: "$24.99", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCu8ngKu-d1RDKBtyEaMmjcsx9pxQMtFrU9nhUALwkp_ca0m5Df2SrfxoSAnKtrtMokTskf7NVCdV0F3kkhgEbCV8gu14-lUe8B9JpyNrb2OrJhjbUdR5DEK2IecvdQPCgbHZoSvn9WN-u8-67RdMm53iMG__Ijnb38HXmy3-NnwoZb4XtKn_0eccgultIzApOQ14E1XpQEcJz917WgZW_HIXwr8qFFjQFnKZrlVaQ1ZzndFlPfwJJEMhlgJVBl9t1lRmRvOFi-RdE" },
-  { title: "Dune", author: "Frank Herbert", price: "$19.95", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCERH_-MZuPf7L6x0meStWman69jSJZqEOtkrAwvA7NDkcF_5hQnwOGLC3LX5sAk6ciIazWO-izae6339OcktnxpgcbTuCtgPU47wp1Nl4vAD7kHwupfH2FGqkIKFCiL1qsHx5eh7G30VZ1FJCT1Lg1wo4MrYXKqV250XZx8Ddym2__6DEUs9Q6mzDRWTNKAwP8fi8oWSZqXf74L4yeqvku92FjaSdwWZ9MIrwsitU-xjHSBdCaugNzORXvzWmpNADMu40vefcFW5E" },
-];
+const USD_TO_COP = 4000;
+
+function generateRandomPrice(title = "") {
+  const hash = title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const base = (hash % 50) + 15;
+  return Math.round(base * USD_TO_COP);
+}
+
+function parseBook(item) {
+  if (!item.cover_i) return null;
+  return {
+    id: item.key ?? item.title,
+    title: item.title ?? "Sin título",
+    author: item.author_name?.[0] ?? "Autor desconocido",
+    price: `$${generateRandomPrice(item.title).toLocaleString("es-CO")}`,
+    img: `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`,
+    agotado: false,
+  };
+}
 
 function FeaturedBooks() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const res = await fetch(
+          "https://openlibrary.org/search.json?q=bestseller&limit=20&fields=key,title,author_name,cover_i"
+        );
+        const data = await res.json();
+        const parsed = (data.docs ?? [])
+          .map(parseBook)
+          .filter(Boolean)
+          .slice(0, 5);
+        setBooks(parsed);
+      } catch (err) {
+        console.error("Error cargando libros destacados:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
   return (
     <section className="max-w-7xl mx-auto px-6 lg:px-20 py-24">
       <div className="flex items-end justify-between mb-12">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Libros Destacados</h2>
-          <p className="text-neutral-muted">Las lecturas que están marcando tendencia este mes.</p>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            Libros Destacados
+          </h2>
+          <p className="text-neutral-muted">
+            Las lecturas que están marcando tendencia este mes.
+          </p>
         </div>
-        <a className="text-primary font-semibold flex items-center gap-1 hover:underline" href="#">
-          Ver todos <span className="material-symbols-outlined">chevron_right</span>
+        <a
+          className="text-primary font-semibold flex items-center gap-1 hover:underline"
+          href="/catalogue"
+        >
+          Ver todos{" "}
+          <span className="material-symbols-outlined">chevron_right</span>
         </a>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {BOOKS.map((book, i) => (
-          <BookCard key={i} {...book} />
-        ))}
-      </div>
+
+      {/* Skeleton mientras carga */}
+      {loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex flex-col bg-neutral-dark border border-neutral-border rounded-xl overflow-hidden animate-pulse"
+            >
+              <div className="aspect-[3/4] bg-neutral-border/40" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 bg-neutral-border/40 rounded w-3/4" />
+                <div className="h-3 bg-neutral-border/40 rounded w-1/2" />
+                <div className="h-6 bg-neutral-border/40 rounded w-1/3 mt-2" />
+                <div className="h-9 bg-neutral-border/40 rounded w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Grid de libros */}
+      {!loading && books.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {books.map((book, i) => (
+            <BookCard key={`${book.id}-${i}`} {...book} />
+          ))}
+        </div>
+      )}
+
+      {/* Fallback si no cargó nada */}
+      {!loading && books.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-neutral-muted">
+          <span className="material-symbols-outlined text-5xl">menu_book</span>
+          <p className="text-sm">No se pudieron cargar los libros destacados.</p>
+        </div>
+      )}
     </section>
   );
 }
