@@ -507,3 +507,22 @@ DROP CONSTRAINT noticias_creado_por_fkey;
 ALTER TABLE noticias
 ADD CONSTRAINT noticias_creado_por_fkey
 FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL;
+
+INSERT INTO categorias (nombre, descripcion) VALUES
+  ('Thriller', 'Novelas de suspenso y acción intensa'),
+  ('Romance', 'Libros de amor y relaciones sentimentales'),
+  ('Terror', 'Libros de horror y miedo'),
+  ('Biografías', 'Historias de vida de personas reales'),
+  ('Historia', 'Libros sobre eventos y personajes históricos'),
+  ('Ciencia', 'Libros de divulgación y conocimiento científico'),
+  ('Filosofía', 'Obras filosóficas y de pensamiento crítico'),
+  ('Psicología', 'Libros sobre la mente y el comportamiento humano'),
+  ('Juvenil', 'Libros para jóvenes adultos'),
+  ('Poesía', 'Obras poéticas y líricas'),
+  ('Drama', 'Obras teatrales y dramáticas'),
+  ('Cómics', 'Cómics y novelas gráficas'),
+  ('Cocina', 'Libros de gastronomía y recetas'),
+  ('Viajes', 'Guías y relatos de viaje'),
+  ('Arte', 'Libros sobre artes visuales y expresión artística'),
+  ('Tecnología', 'Libros sobre tecnología e innovación'),
+  ('Negocios', 'Libros de emprendimiento, economía y negocios');
