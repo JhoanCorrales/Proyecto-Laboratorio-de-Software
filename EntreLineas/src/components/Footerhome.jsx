@@ -1,4 +1,4 @@
-const NAV_LINKS = ["Catálogo Completo", "Libros Electrónicos", "Audio Libros", "Membresías"];
+const NAV_LINKS = ["Catálogo Completo"];
 const SUPPORT_LINKS = ["Centro de Ayuda", "Preguntas Frecuentes", "Envíos y Devoluciones", "Contacto"];
 const LEGAL_LINKS = ["Términos de Servicio", "Privacidad", "Cookies"];
 const SOCIAL_ICONS = ["share", "camera", "mail"];
@@ -13,7 +13,7 @@ function Footerhome() {
             <h2 className="text-xl font-bold tracking-tight text-white">Entre Líneas</h2>
           </div>
           <p className="text-neutral-muted text-sm leading-relaxed">
-            Conectando lectores con mundos infinitos desde 2024. Tu biblioteca digital de confianza para la era moderna.
+            Conectando lectores con mundos infinitos desde 2026. Tu biblioteca digital de confianza para la era moderna.
           </p>
           <div className="flex gap-4">
             {SOCIAL_ICONS.map((icon) => (
@@ -27,7 +27,7 @@ function Footerhome() {
           <h4 className="text-white font-bold mb-6">Navegación</h4>
           <ul className="space-y-4 text-sm text-neutral-muted">
             {NAV_LINKS.map((item) => (
-              <li key={item}><a className="hover:text-primary transition-colors" href="#">{item}</a></li>
+              <li key={item}><a className="hover:text-primary transition-colors" href="/catalogue">{item}</a></li>
             ))}
           </ul>
         </div>

@@ -343,4 +343,17 @@ router.delete("/delete-account", verifyToken, async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor." });
   }
 });
+
+// GET /api/categories — público, no requiere token
+router.get("/categories", async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT id, nombre, descripcion FROM categorias ORDER BY nombre"
+    );
+    return res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error en /api/categories:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
 export default router;

@@ -10,6 +10,7 @@ import Register from './pages/Register.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import Catalogue from './pages/Catalogue.jsx'
 import BookDetail from './pages/BookDetail.jsx'
+import Categories from './pages/Categories.jsx'
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
   {
     path: "/catalogue/:bookTitle/details",
     element: <BookDetail />,
+  },
+  {
+    path: "/categories",
+    element: <Categories />,
   }
 ]);
 

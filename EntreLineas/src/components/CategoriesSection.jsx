@@ -1,4 +1,5 @@
-import CategoryCard from "./Categorycard";
+import { useNavigate } from "react-router-dom";
+import CategoryCard from "./CategoryCard";
 
 const CATEGORIES = [
   { label: "Ficción", icon: "auto_stories", color: "bg-primary/40 group-hover:bg-primary/20", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAj92CapJ71H32g3PqPo4UpdFGT16MKVHk_5irXvuuMte0fcAvrBEM6YfBbQL02MtpUpGGu7yTZgqDX80Ly1F2anuMgG1obniaofo1ZXECzws6hSGMjsO4YyKgosOCs8NClFWI_bqiCbjVqumsWgUIk3_R50k46p8f6f37yDrfLKAkFN89pfd_-D6alk4QM9lUCYcVvmsAe1un_If6H0WEzHQu2mlPe81NWsroy0EalKn0LZ8suTosOkDEcStGGuAOxigAmmcoHOa4" },
