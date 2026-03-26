@@ -21,9 +21,11 @@ function parseBook(item) {
     price: `$${generateRandomPrice(item.title).toLocaleString("es-CO")}`,
     priceRaw: generateRandomPrice(item.title),
     img: `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`,
+    isbn: item.isbn?.[0] ?? null,
     agotado: false,
   };
 }
+
 
 function Catalogue() {
   const [searchParams] = useSearchParams();

@@ -1,14 +1,49 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { addToCart } from "../services/cartService";
+import { getCurrentUser } from "../services/authService";
 
-function BookCard({ title, author, price, img, agotado = false }) {
+function BookCard({ title, author, price, priceRaw, img, agotado = false, isbn }) {
   const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
+  const [feedback, setFeedback] = useState(null); // "ok" | "err"
 
   const handleClick = () => {
     navigate(`/catalogue/${encodeURIComponent(title)}/details`);
   };
+
+  const handleAddToCart = async (e) => {
+    e.stopPropagation(); // evitar navegar al detalle
+    const user = getCurrentUser();
+    if (!user) {
+      navigate("/");
+      return;
+    }
+    setAdding(true);
+    setFeedback(null);
+    try {
+      await addToCart({
+        titulo: title,
+        autor: author,
+        isbn: isbn ?? null,
+        portada_url: img,
+        precio_unitario: priceRaw,
+        cantidad: 1,
+      });
+      setFeedback("ok");
+    } catch {
+      setFeedback("err");
+    } finally {
+      setAdding(false);
+      setTimeout(() => setFeedback(null), 2500);
+    }
+  };
+
   return (
-    <div onClick={handleClick} className={`group flex flex-col bg-neutral-dark border border-neutral-border rounded-xl overflow-hidden shadow-xl transition-all duration-300
-      ${agotado ? "opacity-80 grayscale-[0.5]" : "hover:shadow-primary/5 hover:-translate-y-1"}`}
+    <div
+      onClick={handleClick}
+      className={`group flex flex-col bg-neutral-dark border border-neutral-border rounded-xl overflow-hidden shadow-xl transition-all duration-300
+        ${agotado ? "opacity-80 grayscale-[0.5]" : "hover:shadow-primary/5 hover:-translate-y-1"}`}
     >
       {/* Imagen */}
       <div className="relative aspect-[3/4] overflow-hidden">
@@ -24,7 +59,10 @@ function BookCard({ title, author, price, img, agotado = false }) {
             </span>
           </div>
         ) : (
-          <button className="absolute top-2 right-2 bg-background-dark/60 backdrop-blur-sm rounded-full p-1.5 text-slate-100 cursor-pointer hover:text-primary transition-colors">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-2 right-2 bg-background-dark/60 backdrop-blur-sm rounded-full p-1.5 text-slate-100 cursor-pointer hover:text-primary transition-colors"
+          >
             <span className="material-symbols-outlined text-xl">favorite</span>
           </button>
         )}
@@ -32,14 +70,33 @@ function BookCard({ title, author, price, img, agotado = false }) {
 
       {/* Info */}
       <div className="p-4 flex flex-col flex-1">
-        <h4 className={`font-bold text-lg leading-tight mb-1 text-slate-100 ${!agotado ? "group-hover:text-primary transition-colors" : ""}`}>
+        <h4
+          className={`font-bold text-lg leading-tight mb-1 text-slate-100 ${
+            !agotado ? "group-hover:text-primary transition-colors" : ""
+          }`}
+        >
           {title}
         </h4>
         <p className="text-slate-400 text-sm mb-3">{author}</p>
-        <div className="mt-auto flex flex-col gap-4">
+        <div className="mt-auto flex flex-col gap-2">
           <span className={`font-bold text-xl ${agotado ? "text-slate-400" : "text-primary"}`}>
             {price}
           </span>
+
+          {/* Feedback inline */}
+          {feedback && (
+            <p
+              className={`text-xs font-medium flex items-center gap-1 ${
+                feedback === "ok" ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">
+                {feedback === "ok" ? "check_circle" : "error"}
+              </span>
+              {feedback === "ok" ? "¡Agregado al carrito!" : "Error al agregar"}
+            </p>
+          )}
+
           {agotado ? (
             <button
               disabled
@@ -49,9 +106,17 @@ function BookCard({ title, author, price, img, agotado = false }) {
               <span>No disponible</span>
             </button>
           ) : (
-            <button className="w-full bg-primary hover:bg-primary/80 text-background-dark font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors">
-              <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
-              <span>Agregar</span>
+            <button
+              onClick={handleAddToCart}
+              disabled={adding}
+              className="w-full bg-primary hover:bg-primary/80 text-background-dark font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+            >
+              {adding ? (
+                <div className="w-4 h-4 border-2 border-background-dark border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+              )}
+              <span>{adding ? "Agregando..." : "Agregar"}</span>
             </button>
           )}
         </div>
