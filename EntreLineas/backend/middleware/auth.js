@@ -24,4 +24,22 @@ export function verifyToken(req, res, next) {
   }
 }
 
+/**
+ * Middleware para verificar roles
+ * Requiere que el usuario tenga al menos uno de los roles especificados
+ */
+export const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "No autenticado." });
+    }
+    const userRoles = req.user.roles ?? [];
+    const hasRole = roles.some((r) => userRoles.includes(r));
+    if (!hasRole) {
+      return res.status(403).json({ error: "No tienes permisos para realizar esta acción." });
+    }
+    next();
+  };
+};
+
 export default verifyToken;

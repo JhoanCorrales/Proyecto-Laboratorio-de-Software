@@ -12,6 +12,8 @@ import Catalogue from './pages/Catalogue.jsx'
 import BookDetail from './pages/BookDetail.jsx'
 import Categories from './pages/Categories.jsx'
 import Cart from './pages/Cart.jsx'
+import RoleManagement from './pages/RoleManagement.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 const router = createBrowserRouter([
   {
@@ -45,6 +47,14 @@ const router = createBrowserRouter([
   {
     path: "/cart",
     element: <Cart />,
+  },
+  {
+    path: "/role-management",
+    element: (
+      <ProtectedRoute requiredRole="Root">
+        <RoleManagement />
+      </ProtectedRoute>
+    ),
   }
 ]);
 

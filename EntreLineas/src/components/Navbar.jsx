@@ -41,6 +41,7 @@ function Navbar({ cartCount: cartCountProp }) {
   const [priceMax, setPriceMax] = useState("");
   const [soloDisponibles, setSoloDisponibles] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [isRoot, setIsRoot] = useState(false);
   const panelRef = useRef(null);
 
   // Sincronizar el texto del buscador con la URL al navegar
@@ -49,6 +50,19 @@ function Navbar({ cartCount: cartCountProp }) {
     const q = params.get("q") ?? "";
     setQuery(q);
   }, [location.search]);
+
+  // Detectar si el usuario es Root
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setIsRoot(payload.roles && payload.roles.includes("Root"));
+      } catch {
+        setIsRoot(false);
+      }
+    }
+  }, []);
 
   // Cargar contador del carrito (solo si no se recibe prop)
   useEffect(() => {
@@ -303,6 +317,16 @@ function Navbar({ cartCount: cartCountProp }) {
 
         {/* Iconos derecha */}
         <div className="flex items-center gap-4">
+          {isRoot && (
+            <button
+              onClick={() => navigate("/role-management")}
+              className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary"
+              aria-label="Gestión de roles"
+              title="Gestión de roles"
+            >
+              <span className="material-symbols-outlined">shield_admin</span>
+            </button>
+          )}
           <button
             onClick={() => navigate("/cart")}
             className="p-2 hover:bg-primary/10 rounded-full transition-colors relative"

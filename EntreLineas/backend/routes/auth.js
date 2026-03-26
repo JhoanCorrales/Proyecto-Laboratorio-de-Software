@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../db/index.js";
-import { verifyToken } from "../middleware/auth.js";
+import { verifyToken, requireRole } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -378,4 +378,203 @@ router.get("/openlibrary", async (req, res) => {
     return res.status(500).json({ error: "Error al obtener datos de Open Library" });
   }
 });
+
+// ============================================================
+// GESTIÓN DE USUARIOS — Solo Root
+// ============================================================
+
+/**
+ * GET /api/auth/users
+ * Lista usuarios con paginación, búsqueda y filtro por rol
+ * Solo Root puede acceder
+ */
+router.get("/users", verifyToken, requireRole("Root"), async (req, res) => {
+  try {
+    const { search = "", rol = "", page = 1, limit = 10 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const conditions = [];
+    const values = [];
+    let paramIdx = 1;
+
+    if (search) {
+      conditions.push(`(u.nombre ILIKE $${paramIdx} OR u.email ILIKE $${paramIdx})`);
+      values.push(`%${search}%`);
+      paramIdx++;
+    }
+
+    if (rol) {
+      conditions.push(`r.nombre = $${paramIdx}`);
+      values.push(rol);
+      paramIdx++;
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countQuery = `
+      SELECT COUNT(DISTINCT u.id)
+      FROM usuarios u
+      LEFT JOIN usuario_roles ur ON u.id = ur.usuario_id
+      LEFT JOIN roles r ON ur.rol_id = r.id
+      ${where}
+    `;
+    const countResult = await db.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count);
+
+    const dataQuery = `
+      SELECT
+        u.id,
+        u.nombre,
+        u.email,
+        u.estado,
+        u.created_at,
+        COALESCE(
+          json_agg(r.nombre) FILTER (WHERE r.nombre IS NOT NULL),
+          '[]'
+        ) AS roles
+      FROM usuarios u
+      LEFT JOIN usuario_roles ur ON u.id = ur.usuario_id
+      LEFT JOIN roles r ON ur.rol_id = r.id
+      ${where}
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+      LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
+    `;
+    values.push(Number(limit), offset);
+
+    const result = await db.query(dataQuery, values);
+
+    return res.status(200).json({
+      users: result.rows,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+    });
+  } catch (err) {
+    console.error("Error en GET /api/auth/users:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * PUT /api/auth/users/:id/role
+ * Cambia el rol de un usuario
+ * Solo Root puede acceder
+ */
+router.put("/users/:id/role", verifyToken, requireRole("Root"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rol } = req.body;
+
+    if (!rol) {
+      return res.status(400).json({ error: "El rol es obligatorio." });
+    }
+
+    // No permitir cambiar el propio rol
+    if (Number(id) === req.user.id) {
+      return res.status(400).json({ error: "No puedes cambiar tu propio rol." });
+    }
+
+    const rolResult = await db.query("SELECT id FROM roles WHERE nombre = $1", [rol]);
+    if (rolResult.rows.length === 0) {
+      return res.status(404).json({ error: "Rol no encontrado." });
+    }
+    const rolId = rolResult.rows[0].id;
+
+    // Eliminar roles actuales y asignar el nuevo
+    await db.query("DELETE FROM usuario_roles WHERE usuario_id = $1", [id]);
+    await db.query(
+      "INSERT INTO usuario_roles (usuario_id, rol_id) VALUES ($1, $2)",
+      [id, rolId]
+    );
+
+    return res.status(200).json({ message: "Rol actualizado exitosamente." });
+  } catch (err) {
+    console.error("Error en PUT /api/auth/users/:id/role:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * PUT /api/auth/users/:id/estado
+ * Activa o suspende una cuenta
+ * Solo Root puede acceder
+ */
+router.put("/users/:id/estado", verifyToken, requireRole("Root"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    if (!["activo", "suspendido"].includes(estado)) {
+      return res.status(400).json({ error: "Estado inválido." });
+    }
+
+    if (Number(id) === req.user.id) {
+      return res.status(400).json({ error: "No puedes cambiar tu propio estado." });
+    }
+
+    await db.query(
+      "UPDATE usuarios SET estado = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+      [estado, id]
+    );
+
+    return res.status(200).json({ message: `Cuenta ${estado === "activo" ? "activada" : "suspendida"} exitosamente.` });
+  } catch (err) {
+    console.error("Error en PUT /api/auth/users/:id/estado:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
+/**
+ * POST /api/auth/users/create-admin
+ * Crea un nuevo usuario con rol Administrador
+ * Solo Root puede acceder
+ */
+router.post("/users/create-admin", verifyToken, requireRole("Root"), async (req, res) => {
+  try {
+    const { nombre, apellidos, email, password } = req.body;
+
+    if (!nombre || !email || !password) {
+      return res.status(400).json({ error: "Nombre, correo y contraseña son obligatorios." });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: "La contraseña debe tener mínimo 8 caracteres." });
+    }
+
+    const existing = await db.query("SELECT id FROM usuarios WHERE email = $1", [email.toLowerCase().trim()]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: "El correo ya está registrado." });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+    const nombreCompleto = apellidos ? `${nombre} ${apellidos}` : nombre;
+
+    const userResult = await db.query(
+      `INSERT INTO usuarios (nombre, email, password_hash, estado)
+       VALUES ($1, $2, $3, 'activo')
+       RETURNING id, nombre, email`,
+      [nombreCompleto, email.toLowerCase().trim(), password_hash]
+    );
+
+    const userId = userResult.rows[0].id;
+
+    const rolResult = await db.query("SELECT id FROM roles WHERE nombre = 'Administrador'");
+    if (rolResult.rows.length > 0) {
+      await db.query(
+        "INSERT INTO usuario_roles (usuario_id, rol_id) VALUES ($1, $2)",
+        [userId, rolResult.rows[0].id]
+      );
+    }
+
+    return res.status(201).json({
+      message: "Administrador creado exitosamente.",
+      user: userResult.rows[0],
+    });
+  } catch (err) {
+    console.error("Error en POST /api/auth/users/create-admin:", err);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
+});
+
 export default router;

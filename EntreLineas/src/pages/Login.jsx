@@ -19,7 +19,11 @@ export default function Login() {
       const { token, user } = await login(email, password);
       saveSession(token, user);
       // Redirigir según rol
-      navigate("/home");
+      if (user.roles && user.roles.includes("Root")) {
+        navigate("/role-management");
+      } else {
+        navigate("/home");
+      }
     } catch (err) {
       setError(err.message || "Error al iniciar sesión.");
     } finally {
