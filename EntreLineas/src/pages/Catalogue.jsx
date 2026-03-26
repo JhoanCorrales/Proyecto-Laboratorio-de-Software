@@ -56,15 +56,9 @@ function Catalogue() {
 
   const buildUrl = useCallback(
     (pageNum) => {
-      const base = "https://openlibrary.org/search.json";
       const q = search.trim() || activeCategory.query || "fiction";
-      const params = new URLSearchParams({
-        q,
-        limit: PAGE_SIZE,
-        page: pageNum,
-        fields: "key,title,author_name,cover_i,isbn,first_publish_year",
-      });
-      return `${base}?${params}`;
+      const olParams = `q=${encodeURIComponent(q)}&limit=${PAGE_SIZE}&page=${pageNum}&fields=key,title,author_name,cover_i,isbn,first_publish_year`;
+      return `http://localhost:4003/api/auth/openlibrary?q=${encodeURIComponent(olParams)}&type=search`;
     },
     [search, activeCategory]
   );

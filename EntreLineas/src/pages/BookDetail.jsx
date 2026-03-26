@@ -111,10 +111,12 @@ function BookDetail() {
 
       try {
         // 1. Buscar por título en search.json
+        const searchParams = new URLSearchParams({
+          q: `q=${encodeURIComponent(bookTitle)}&limit=1&fields=key,title,author_name,cover_i,isbn,first_publish_year,subject,language,number_of_pages_median,publisher`,
+          type: "search"
+        });
         const searchRes = await fetch(
-          `https://corsproxy.io/?https://openlibrary.org/search.json?q=${encodeURIComponent(
-            bookTitle
-          )}&limit=1&fields=key,title,author_name,cover_i,isbn,first_publish_year,subject,language,number_of_pages_median,publisher`
+          `http://localhost:4003/api/auth/openlibrary?${searchParams}`
         );
         if (!searchRes.ok) throw new Error("Error al buscar el libro");
         const searchData = await searchRes.json();
@@ -137,7 +139,7 @@ function BookDetail() {
         if (doc.key) {
           try {
             const workRes = await fetch(
-              `https://corsproxy.io/?https://openlibrary.org${doc.key}.json`
+              `http://localhost:4003/api/auth/openlibrary?q=${encodeURIComponent(doc.key)}&type=work`
             );
             if (workRes.ok) {
               const work = await workRes.json();
@@ -150,10 +152,12 @@ function BookDetail() {
 
         // 3. Libros relacionados
         const relQuery = doc.author_name?.[0] ?? doc.subject?.[0] ?? bookTitle;
+        const relParams = new URLSearchParams({
+          q: `q=${encodeURIComponent(relQuery)}&limit=10&fields=key,title,author_name,cover_i`,
+          type: "search"
+        });
         const relRes = await fetch(
-          `https://corsproxy.io/?https://openlibrary.org/search.json?q=${encodeURIComponent(
-            relQuery
-          )}&limit=10&fields=key,title,author_name,cover_i`
+          `http://localhost:4003/api/auth/openlibrary?${relParams}`
         );
         if (relRes.ok) {
           const relData = await relRes.json();
@@ -192,8 +196,8 @@ function BookDetail() {
 
   const thumbnails = doc.cover_i
     ? [
-        `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`,
-      ]
+      `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`,
+    ]
     : [];
 
   return (

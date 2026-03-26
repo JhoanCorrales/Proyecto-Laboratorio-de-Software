@@ -356,4 +356,26 @@ router.get("/categories", async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor." });
   }
 });
+
+// GET /api/auth/openlibrary?q=...&type=search|work
+router.get("/openlibrary", async (req, res) => {
+  const { q, type } = req.query;
+  
+  try {
+    let url;
+    if (type === "work") {
+      url = `https://openlibrary.org${q}.json`;
+    } else {
+      url = `https://openlibrary.org/search.json?${q}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Error al contactar Open Library");
+    const data = await response.json();
+    return res.status(200).json(data);
+  } catch (err) {
+    console.error("Error en proxy OpenLibrary:", err);
+    return res.status(500).json({ error: "Error al obtener datos de Open Library" });
+  }
+});
 export default router;
