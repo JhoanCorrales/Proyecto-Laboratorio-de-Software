@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import db from "./db/index.js";
 import authRouter from "./routes/auth.js";
+import cartRouter from "./routes/cart.js";
 
 dotenv.config();
 
@@ -65,6 +66,9 @@ app.get("/api/health", async (req, res) => {
 
 // Auth routes
 app.use("/api/auth", authRouter);
+
+// Cart routes
+app.use("/api/cart", cartRouter);
 
 // 404 handler
 app.use((req, res) => {

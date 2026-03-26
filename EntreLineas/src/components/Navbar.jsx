@@ -1,5 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { getCurrentUser } from "../services/authService";
+import { getCart } from "../services/cartService";
 
 const CATEGORIES = [
   { label: "Todos los géneros", query: "fiction", icon: "filter_list" },
@@ -29,7 +31,7 @@ const CATEGORIES = [
   { label: "Negocios", query: "subject:business", icon: "business_center" },
 ];
 
-function Navbar() {
+function Navbar({ cartCount: cartCountProp }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState("");
@@ -38,6 +40,7 @@ function Navbar() {
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [soloDisponibles, setSoloDisponibles] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const panelRef = useRef(null);
 
   // Sincronizar el texto del buscador con la URL al navegar
@@ -46,6 +49,22 @@ function Navbar() {
     const q = params.get("q") ?? "";
     setQuery(q);
   }, [location.search]);
+
+  // Cargar contador del carrito (solo si no se recibe prop)
+  useEffect(() => {
+    if (cartCountProp != null) {
+      setCartCount(cartCountProp);
+      return;
+    }
+    const user = getCurrentUser();
+    if (!user) return;
+    getCart()
+      .then((data) => {
+        const total = data.items.reduce((acc, i) => acc + i.cantidad, 0);
+        setCartCount(total);
+      })
+      .catch(() => {});
+  }, [cartCountProp]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -284,9 +303,17 @@ function Navbar() {
 
         {/* Iconos derecha */}
         <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-primary/10 rounded-full transition-colors relative">
+          <button
+            onClick={() => navigate("/cart")}
+            className="p-2 hover:bg-primary/10 rounded-full transition-colors relative"
+            aria-label="Ver carrito"
+          >
             <span className="material-symbols-outlined">shopping_cart</span>
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-background-dark">3</span>
+            {cartCount > 0 && (
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-background-dark">
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => navigate("/profile/edit")}

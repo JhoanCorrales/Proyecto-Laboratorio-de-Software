@@ -11,6 +11,7 @@ import EditProfile from './pages/EditProfile.jsx'
 import Catalogue from './pages/Catalogue.jsx'
 import BookDetail from './pages/BookDetail.jsx'
 import Categories from './pages/Categories.jsx'
+import Cart from './pages/Cart.jsx'
 
 const router = createBrowserRouter([
   {
@@ -40,6 +41,10 @@ const router = createBrowserRouter([
   {
     path: "/categories",
     element: <Categories />,
+  },
+  {
+    path: "/cart",
+    element: <Cart />,
   }
 ]);
 

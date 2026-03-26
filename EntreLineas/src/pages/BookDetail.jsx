@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { addToCart } from "../services/cartService";
+import { getCurrentUser } from "../services/authService";
 
 const USD_TO_COP = 4000;
 
@@ -90,12 +92,19 @@ function BookDetail() {
   const { bookTitle } = useParams();
   const navigate = useNavigate();
 
-  const [searchDoc, setSearchDoc] = useState(null);  // datos de /search.json
-  const [workData, setWorkData] = useState(null);     // datos de /works/{key}.json
+  const [searchDoc, setSearchDoc] = useState(null);
+  const [workData, setWorkData] = useState(null);
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImg, setSelectedImg] = useState(null);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartToast, setCartToast] = useState({ msg: "", type: "success" });
+
+  const showCartToast = (msg, type = "success") => {
+    setCartToast({ msg, type });
+    setTimeout(() => setCartToast({ msg: "", type: "success" }), 3000);
+  };
 
   // Precio estable — se calcula una sola vez cuando llega el título
   const priceRef = useRef(null);
@@ -188,8 +197,34 @@ function BookDetail() {
   const priceCOP = priceRef.current ?? generateRandomPrice(bookTitle);
   const price = `$${priceCOP.toLocaleString("es-CO")}`;
   const originalPrice = `$${Math.round(priceCOP * 1.2).toLocaleString("es-CO")}`;
-  const rating = 4; // Open Library search no trae rating directamente
-  const stock = ((doc.number_of_pages_median ?? 300) % 20) + 5; // determinista
+  const rating = 4;
+  const stock = ((doc.number_of_pages_median ?? 300) % 20) + 5;
+
+  const handleAddToCart = async () => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate("/");
+      return;
+    }
+    setAddingToCart(true);
+    try {
+      await addToCart({
+        titulo: doc.title ?? bookTitle,
+        autor: doc.author_name?.[0] ?? "Desconocido",
+        isbn: doc.isbn?.[0] ?? null,
+        portada_url: doc.cover_i
+          ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+          : null,
+        precio_unitario: priceCOP,
+        cantidad: 1,
+      });
+      showCartToast("¡Libro agregado al carrito!");
+    } catch (err) {
+      showCartToast(err.message || "Error al agregar al carrito.", "error");
+    } finally {
+      setAddingToCart(false);
+    }
+  };
 
   const langMap = { eng: "Inglés", spa: "Español", fre: "Francés", ger: "Alemán", por: "Portugués" };
   const language = doc.language?.[0] ? (langMap[doc.language[0]] ?? doc.language[0]) : "No disponible";
@@ -343,15 +378,39 @@ function BookDetail() {
 
                   {/* Botones */}
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <button className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined">shopping_cart</span>
-                      Agregar al carrito
+                    <button
+                      className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                      onClick={handleAddToCart}
+                      disabled={addingToCart}
+                    >
+                      <span className="material-symbols-outlined">
+                        {addingToCart ? "hourglass_empty" : "shopping_cart"}
+                      </span>
+                      {addingToCart ? "Agregando..." : "Agregar al carrito"}
                     </button>
-                    <button className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
+                    <button
+                      className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                      onClick={handleAddToCart}
+                    >
                       <span className="material-symbols-outlined">payments</span>
                       Comprar ahora
                     </button>
                   </div>
+                  {/* Toast de carrito */}
+                  {cartToast.msg && (
+                    <div
+                      className={`mt-2 flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium border ${
+                        cartToast.type === "error"
+                          ? "bg-red-900/40 border-red-500/40 text-red-300"
+                          : "bg-green-900/40 border-green-500/40 text-green-300"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        {cartToast.type === "error" ? "error" : "check_circle"}
+                      </span>
+                      {cartToast.msg}
+                    </div>
+                  )}
                   <button className="w-full border-2 border-primary text-primary hover:bg-primary/10 font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
                     <span className="material-symbols-outlined">bookmark</span>
                     Reservar libro
