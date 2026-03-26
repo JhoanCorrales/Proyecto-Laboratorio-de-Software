@@ -8,6 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,15 +87,27 @@ export default function Login() {
                 <label className="text-sm font-medium pb-2 block">
                   Contraseña
                 </label>
-                <input
-                  type="password"
-                  placeholder="Ingresa tu contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full rounded-lg border border-neutral-border bg-neutral-dark h-12 px-4 focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Ingresa tu contraseña"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="w-full rounded-lg border border-neutral-border bg-neutral-dark h-12 px-4 pr-12 focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-muted hover:text-primary transition-colors disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {showPassword ? "visibility" : "visibility_off"}
+                    </span>
+                  </button>
+                </div>
                 <div className="flex justify-end pt-2">
                   <a href="#" className="text-sm text-neutral-muted hover:text-primary underline">
                     ¿Olvidaste tu contraseña?
