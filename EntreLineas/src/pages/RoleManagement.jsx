@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const API = "http://localhost:4003/api/auth";
 const ROLES = ["Root", "Administrador", "Cliente", "Visitante"];
@@ -313,31 +314,7 @@ function RoleManagement() {
   return (
     <div className="bg-background-dark text-slate-100 min-h-screen flex flex-col">
 
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-neutral-border/30 bg-background-dark/80 backdrop-blur-md px-6 md:px-20 py-4 sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-primary text-3xl">auto_stories</span>
-          <h2 className="text-slate-100 text-xl font-bold tracking-tight">Entre Líneas</h2>
-        </div>
-        <div className="flex items-center gap-6">
-          <nav className="hidden md:flex gap-6 text-sm font-medium text-neutral-muted">
-            <a className="hover:text-primary transition-colors" href="/catalogue">Catálogo</a>
-            <span className="text-primary">Gestión</span>
-            <a className="hover:text-primary transition-colors" href="#">Reportes</a>
-          </nav>
-          <div className="flex items-center gap-3 border-l border-neutral-border/50 pl-6">
-            <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-neutral-accent hover:bg-neutral-accent/80 text-slate-100 transition-all">
-              <span className="material-symbols-outlined text-xl">settings</span>
-            </button>
-            <button
-              onClick={() => navigate("/profile/edit")}
-              className="size-10 rounded-full border-2 border-primary/30 bg-neutral-accent flex items-center justify-center"
-            >
-              <span className="material-symbols-outlined text-neutral-muted">account_circle</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1 flex flex-col">
         {/* Hero */}
@@ -520,10 +497,6 @@ function RoleManagement() {
       <footer className="px-6 md:px-20 py-6 border-t border-neutral-border/20 bg-background-dark/95">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-neutral-muted text-xs">
           <p>© 2026 Entre Líneas S.A. - Sistema de gestión interna</p>
-          <div className="flex gap-6">
-            <a className="hover:text-primary transition-colors" href="#">Política de Seguridad</a>
-            <a className="hover:text-primary transition-colors" href="#">Términos de Uso</a>
-          </div>
         </div>
       </footer>
 

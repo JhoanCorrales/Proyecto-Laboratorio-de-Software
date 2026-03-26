@@ -44,27 +44,24 @@ function Navbar({ cartCount: cartCountProp }) {
   const [isRoot, setIsRoot] = useState(false);
   const panelRef = useRef(null);
 
-  // Sincronizar el texto del buscador con la URL al navegar
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = params.get("q") ?? "";
     setQuery(q);
   }, [location.search]);
 
-  // Detectar si el usuario es Root
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        setIsRoot(payload.roles && payload.roles.includes("Root"));
+        setIsRoot(payload.roles?.includes("Root"));
       } catch {
         setIsRoot(false);
       }
     }
   }, []);
 
-  // Cargar contador del carrito (solo si no se recibe prop)
   useEffect(() => {
     if (cartCountProp != null) {
       setCartCount(cartCountProp);
@@ -72,19 +69,15 @@ function Navbar({ cartCount: cartCountProp }) {
     }
     const user = getCurrentUser();
     if (!user) return;
-    getCart()
-      .then((data) => {
-        const total = data.items.reduce((acc, i) => acc + i.cantidad, 0);
-        setCartCount(total);
-      })
-      .catch(() => {});
+    getCart().then(data => {
+      const total = data.items.reduce((acc, i) => acc + i.cantidad, 0);
+      setCartCount(total);
+    }).catch(() => {});
   }, [cartCountProp]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) {
-        setPanelOpen(false);
-      }
+      if (panelRef.current && !panelRef.current.contains(e.target)) setPanelOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -106,23 +99,15 @@ function Navbar({ cartCount: cartCountProp }) {
     setPanelOpen(false);
   };
 
-  // Al cambiar el input — si se borra todo, vuelve al catálogo limpio
   const handleQueryChange = (e) => {
     const val = e.target.value;
     setQuery(val);
-    if (val === "") {
-      navigate("/catalogue");
-    }
+    if (val === "") navigate("/catalogue");
   };
 
-  // Botón X — borra texto y vuelve al catálogo limpio
   const handleClear = () => {
     setQuery("");
     navigate("/catalogue");
-  };
-
-  const handleCategorySelect = (cat) => {
-    setSelectedCategory(cat);
   };
 
   const handleApply = () => {
@@ -150,199 +135,123 @@ function Navbar({ cartCount: cartCountProp }) {
   return (
     <nav className="sticky top-0 z-50 border-b border-primary/10 bg-background-dark/80 backdrop-blur-md px-6 lg:px-20 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
-
-        {/* Logo */}
+        
+        {/* Logo y Enlaces */}
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 text-primary">
+          <div className="flex items-center gap-3 text-primary" onClick={() => navigate(isRoot ? "/role-management" : "/home")}>
             <span className="material-symbols-outlined text-3xl shrink-0">menu_book</span>
             <h1 className="text-xl font-bold tracking-tight text-white">Entre Líneas</h1>
           </div>
-          <div className="hidden md:flex items-center gap-6">
-            <a className="text-sm font-medium text-slate-300 hover:text-primary transition-colors" href="/home">Inicio</a>
-            <a className="text-sm font-medium text-slate-300 hover:text-primary transition-colors" href="/catalogue">Catálogo</a>
-          </div>
+          {!isRoot && (
+            <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+              <button onClick={() => navigate("/home")} className="hover:text-primary transition-colors">Inicio</button>
+              <button onClick={() => navigate("/catalogue")} className="hover:text-primary transition-colors">Catálogo</button>
+            </div>
+          )}
         </div>
 
-        {/* Buscador — solo desktop */}
-        <div className="flex-1 max-w-xl hidden lg:flex items-stretch relative" ref={panelRef}>
-          <form onSubmit={handleSearch} className="flex w-full">
+        {/* Buscador y Filtros */}
+        {!isRoot && (
+          <div className="flex-1 max-w-xl hidden lg:flex items-stretch relative" ref={panelRef}>
+            <form onSubmit={handleSearch} className="flex w-full">
+              {/* Botón TUNE (Filtros) */}
+              <button
+                type="button"
+                onClick={() => setPanelOpen(!panelOpen)}
+                className={`flex items-center px-3 border border-neutral-border border-r-0 rounded-l-lg transition-colors ${panelOpen ? "bg-primary/20 text-primary" : "bg-neutral-dark text-neutral-muted hover:text-white"}`}
+              >
+                <span className="material-symbols-outlined text-xl">tune</span>
+                {activeFiltersCount > 0 && (
+                  <span className="ml-1 bg-primary text-background-dark text-[10px] font-bold px-1.5 rounded-full">{activeFiltersCount}</span>
+                )}
+              </button>
 
-            {/* Botón filtro */}
-            <button
-              type="button"
-              onClick={() => setPanelOpen((v) => !v)}
-              className={`relative flex items-center justify-center px-3 border border-neutral-border border-r-0 rounded-l-lg transition-colors
-                ${panelOpen ? "bg-primary/20 text-primary" : "bg-neutral-dark text-neutral-muted hover:text-white"}`}
-            >
-              <span className="material-symbols-outlined text-xl">tune</span>
-              {activeFiltersCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-background-dark text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {activeFiltersCount}
+              <div className="relative flex-1">
+                <input
+                  className="w-full h-full pl-4 pr-20 py-2 bg-neutral-dark border border-neutral-border border-l-0 rounded-r-lg text-sm text-white placeholder-neutral-muted focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Buscar libros, autores..."
+                  value={query}
+                  onChange={handleQueryChange}
+                />
+                
+                {/* LUPA Y EQUIS (Restauradas) */}
+                <div className="absolute right-0 top-0 h-full flex items-center pr-2 gap-1">
+                  {query && (
+                    <button type="button" onClick={handleClear} className="p-1 text-neutral-muted hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                  )}
+                  <button type="submit" className="p-1 text-neutral-muted hover:text-primary transition-colors">
+                    <span className="material-symbols-outlined text-lg">search</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* PANEL DE FILTROS (RESTAURADO) */}
+            {panelOpen && (
+              <div className="absolute top-full left-0 mt-2 w-80 bg-neutral-dark border border-neutral-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="p-5 space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-muted uppercase tracking-wider">Género</label>
+                    <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.query}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${selectedCategory.query === cat.query ? "bg-primary text-background-dark font-bold" : "text-slate-300 hover:bg-neutral-accent"}`}
+                        >
+                          <span className="material-symbols-outlined text-lg">{cat.icon}</span>
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-muted uppercase tracking-wider">Precio ($)</label>
+                    <div className="flex gap-3">
+                      <input type="number" placeholder="Min" className="w-full bg-neutral-accent border border-neutral-border rounded-lg px-3 py-2 text-sm text-white" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
+                      <input type="number" placeholder="Max" className="w-full bg-neutral-accent border border-neutral-border rounded-lg px-3 py-2 text-sm text-white" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="hidden" checked={soloDisponibles} onChange={(e) => setSoloDisponibles(e.target.checked)} />
+                    <div className={`size-5 rounded border flex items-center justify-center transition-colors ${soloDisponibles ? "bg-primary border-primary" : "border-neutral-border group-hover:border-primary/50"}`}>
+                      {soloDisponibles && <span className="material-symbols-outlined text-background-dark text-sm font-bold">check</span>}
+                    </div>
+                    <span className="text-sm text-slate-300">Solo libros disponibles</span>
+                  </label>
+
+                  <div className="flex gap-2 pt-2 border-t border-neutral-border/50">
+                    <button onClick={handleApply} className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-2.5 rounded-lg text-sm">Aplicar</button>
+                    <button onClick={handleClearFilters} className="flex-1 bg-neutral-accent hover:bg-neutral-border/30 text-white py-2.5 rounded-lg text-sm">Limpiar</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Iconos Derecha */}
+        <div className="flex items-center gap-6">
+          {isRoot && (
+            <button onClick={() => navigate("/role-management")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary" title="Gestión de roles">
+              <span className="material-symbols-outlined">admin_panel_settings</span>
+            </button>
+          )}
+          {!isRoot && (
+            <button onClick={() => navigate("/cart")} className="p-2 hover:bg-primary/10 rounded-full transition-colors relative text-slate-300">
+              <span className="material-symbols-outlined">shopping_cart</span>
+              {cartCount > 0 && (
+                <span className="absolute top-1 right-1 bg-primary text-background-dark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {cartCount > 9 ? "9+" : cartCount}
                 </span>
               )}
             </button>
-
-            {/* Input con X y lupa a la derecha */}
-            <div className="relative flex-1">
-              <input
-                className="w-full h-full pl-4 pr-20 py-2 bg-neutral-dark border border-neutral-border border-l-0 rounded-r-lg text-sm text-white placeholder-neutral-muted focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="Buscar libros, autores..."
-                value={query}
-                onChange={handleQueryChange}
-              />
-
-              {/* Iconos derecha del input */}
-              <div className="absolute right-0 top-0 h-full flex items-center pr-2 gap-1">
-                {/* X — solo si hay texto */}
-                {query && (
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="p-1 text-neutral-muted hover:text-white transition-colors rounded"
-                  >
-                    <span className="material-symbols-outlined text-lg">close</span>
-                  </button>
-                )}
-                {/* Lupa — siempre visible, hace submit */}
-                <button
-                  type="submit"
-                  className="p-1 text-neutral-muted hover:text-primary transition-colors rounded"
-                >
-                  <span className="material-symbols-outlined text-lg">search</span>
-                </button>
-              </div>
-            </div>
-          </form>
-
-          {/* Panel desplegable */}
-          {panelOpen && (
-            <div className="absolute top-full left-0 mt-2 w-72 bg-neutral-dark border border-neutral-border rounded-xl shadow-2xl z-50 overflow-hidden">
-              <div className="p-5 space-y-5">
-
-                <div className="flex items-center justify-between">
-                  <h3 className="text-white font-bold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-xl">tune</span>
-                    Filtros
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setPanelOpen(false)}
-                    className="text-neutral-muted hover:text-white transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-xl">close</span>
-                  </button>
-                </div>
-
-                {/* Categorías */}
-                <div>
-                  <p className="text-neutral-muted text-xs font-bold uppercase tracking-wider mb-2">
-                    Categoría
-                  </p>
-                  <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                    {CATEGORIES.map((cat) => (
-                      <button
-                        key={cat.query}
-                        type="button"
-                        onClick={() => handleCategorySelect(cat)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left
-                          ${selectedCategory.query === cat.query
-                            ? "bg-primary/20 text-primary"
-                            : "text-slate-300 hover:bg-neutral-accent hover:text-white"
-                          }`}
-                      >
-                        <span className="material-symbols-outlined text-sm">{cat.icon}</span>
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Rango de precio */}
-                <div>
-                  <p className="text-neutral-muted text-xs font-bold uppercase tracking-wider mb-2">
-                    Rango de precio (COP)
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      className="w-1/2 bg-neutral-accent border-none rounded-lg py-2 px-3 text-sm text-white placeholder:text-neutral-muted outline-none focus:ring-1 focus:ring-primary"
-                      placeholder="Mín"
-                      type="number"
-                      value={priceMin}
-                      onChange={(e) => setPriceMin(e.target.value)}
-                    />
-                    <input
-                      className="w-1/2 bg-neutral-accent border-none rounded-lg py-2 px-3 text-sm text-white placeholder:text-neutral-muted outline-none focus:ring-1 focus:ring-primary"
-                      placeholder="Máx"
-                      type="number"
-                      value={priceMax}
-                      onChange={(e) => setPriceMax(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Disponibilidad */}
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    className="rounded bg-neutral-accent border-none text-primary focus:ring-primary"
-                    type="checkbox"
-                    checked={soloDisponibles}
-                    onChange={(e) => setSoloDisponibles(e.target.checked)}
-                  />
-                  <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
-                    Solo libros disponibles
-                  </span>
-                </label>
-
-                {/* Botones */}
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={handleApply}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-2.5 rounded-lg text-sm transition-colors"
-                  >
-                    Aplicar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="flex-1 bg-transparent hover:bg-neutral-accent text-neutral-muted border border-neutral-border font-medium py-2.5 rounded-lg text-sm transition-colors"
-                  >
-                    Limpiar
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
-        </div>
-
-        {/* Iconos derecha */}
-        <div className="flex items-center gap-4">
-          {isRoot && (
-            <button
-              onClick={() => navigate("/role-management")}
-              className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary"
-              aria-label="Gestión de roles"
-              title="Gestión de roles"
-            >
-              <span className="material-symbols-outlined">shield_admin</span>
-            </button>
-          )}
-          <button
-            onClick={() => navigate("/cart")}
-            className="p-2 hover:bg-primary/10 rounded-full transition-colors relative"
-            aria-label="Ver carrito"
-          >
-            <span className="material-symbols-outlined">shopping_cart</span>
-            {cartCount > 0 && (
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-background-dark">
-                {cartCount > 9 ? "9+" : cartCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => navigate("/profile/edit")}
-            className="p-2 hover:bg-primary/10 rounded-full transition-colors"
-          >
+          <button onClick={() => navigate("/profile/edit")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-slate-300" title="Editar Perfil">
             <span className="material-symbols-outlined">account_circle</span>
           </button>
         </div>
