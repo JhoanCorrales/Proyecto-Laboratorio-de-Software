@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from "../components/Input"
 import Select from "../components/Select"
 import { Label } from "../components/ui/label"
 import { motion } from 'motion/react';
+import { departamentos, getCiudades, getCodigoPostal } from '../assets/data/Colombiadata';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -46,6 +47,24 @@ export default function Register() {
       [name]: value
     }));
   };
+
+  useEffect(() => {
+    if (formData.departamento) {
+      // Si cambia el departamento, limpia ciudad y código postal
+      setFormData(prev => ({
+        ...prev,
+        ciudad: '',
+        codigo_postal: '',
+      }));
+    }
+  }, [formData.departamento]);
+
+  useEffect(() => {
+    if (formData.departamento && formData.ciudad) {
+      const cp = getCodigoPostal(formData.departamento, formData.ciudad);
+      setFormData(prev => ({ ...prev, codigo_postal: cp }));
+    }
+  }, [formData.ciudad]);
 
   const validateForm = () => {
     // Expresión regular para validar correo electrónico
@@ -267,13 +286,27 @@ export default function Register() {
               onChange={handleInputChange}
             />
 
-            {/* Ciudad */}
-            <Input 
-              label="Ciudad" 
-              placeholder="Tu ciudad"
+            {/* Departamento - ahora es un Select */}
+            <Select
+              label="Departamento"
+              name="departamento"
+              value={formData.departamento}
+              onChange={(value) => handleSelectChange('departamento', value)}
+              options={departamentos.map(d => ({ value: d, label: d }))}
+              placeholder="Selecciona tu departamento"
+              required
+            />
+
+            {/* Ciudad - filtrada por departamento */}
+            <Select
+              label="Ciudad"
               name="ciudad"
               value={formData.ciudad}
-              onChange={handleInputChange}
+              onChange={(value) => handleSelectChange('ciudad', value)}
+              options={getCiudades(formData.departamento).map(c => ({ value: c, label: c }))}
+              placeholder={formData.departamento ? "Selecciona tu ciudad" : "Primero selecciona un departamento"}
+              disabled={!formData.departamento}
+              required
             />
 
             {/* Dirección */}
@@ -286,22 +319,15 @@ export default function Register() {
               onChange={handleInputChange}
             />
 
-            {/* Departamento */}
-            <Input 
-              label="Departamento" 
-              placeholder="Tu departamento/estado"
-              name="departamento"
-              value={formData.departamento}
-              onChange={handleInputChange}
-            />
-
-            {/* Código Postal */}
+            {/* Código Postal - se llena automático */}
             <Input 
               label="Código Postal" 
-              placeholder="Tu código postal"
+              placeholder="Se llena automáticamente"
               name="codigo_postal"
               value={formData.codigo_postal}
               onChange={handleInputChange}
+              readOnly={!!formData.codigo_postal}
+              className="md:col-span-2"
             />
 
             {/* Checkbox */}

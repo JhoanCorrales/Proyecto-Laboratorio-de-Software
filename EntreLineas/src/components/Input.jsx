@@ -10,6 +10,8 @@ export default function Input({
   showPassword = false,
   onToggleShowPassword = null,
   isLoading = false,
+  datalist = null,
+  readOnly = false,
   ...props
 }) {
   const isEmpty = type === "password" && !value?.trim();
@@ -30,7 +32,9 @@ export default function Input({
           onChange={onChange}
           placeholder={placeholder}
           required={required}
-          className={`w-full rounded-lg border border-slate-300 dark:border-[#325a67] bg-white dark:bg-[#111e22] text-slate-900 dark:text-white focus:ring-primary focus:border-primary h-12 px-4 ${type === "password" && onToggleShowPassword ? "pr-12" : ""}`}
+          list={datalist ? `datalist-${name}` : undefined}
+          readOnly={readOnly}
+          className={`w-full rounded-lg border border-slate-300 dark:border-[#325a67] bg-white dark:bg-[#111e22] text-slate-900 dark:text-white focus:ring-primary focus:border-primary h-12 px-4 ${type === "password" && onToggleShowPassword ? "pr-12" : ""} ${readOnly ? "opacity-75" : ""}`}
           {...props}
         />
         {type === "password" && onToggleShowPassword && (
@@ -46,6 +50,13 @@ export default function Input({
           </button>
         )}
       </div>
+      {datalist && (
+        <datalist id={`datalist-${name}`}>
+          {datalist.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+      )}
     </div>
   )
 }
