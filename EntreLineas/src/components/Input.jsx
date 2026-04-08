@@ -34,10 +34,10 @@ export default function Input({
           required={required}
           list={datalist ? `datalist-${name}` : undefined}
           readOnly={readOnly}
-          className={`w-full rounded-lg border border-slate-300 dark:border-[#325a67] bg-white dark:bg-[#111e22] text-slate-900 dark:text-white focus:ring-primary focus:border-primary h-12 px-4 ${type === "password" && onToggleShowPassword ? "pr-12" : ""} ${readOnly ? "opacity-75" : ""}`}
+          className={`w-full rounded-lg border border-slate-300 dark:border-[#325a67] bg-white dark:bg-[#111e22] text-slate-900 dark:text-white focus:ring-primary focus:border-primary h-12 px-4 ${onToggleShowPassword ? "pr-12" : ""} ${readOnly ? "opacity-75" : ""}`}
           {...props}
         />
-        {type === "password" && onToggleShowPassword && (
+        {onToggleShowPassword && (
           <button
             type="button"
             onClick={onToggleShowPassword}
