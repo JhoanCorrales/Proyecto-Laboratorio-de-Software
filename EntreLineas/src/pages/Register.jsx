@@ -13,6 +13,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     nombre: '',
@@ -232,22 +233,28 @@ export default function Register() {
             {/* Contraseña */}
             <Input
               label="Contraseña"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Mínimo 8 caracteres"
               name="password"
               value={formData.password}
               onChange={handleInputChange}
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
+              isLoading={loading}
               required
             />
 
             {/* Confirmar Contraseña */}
             <Input
               label="Confirmar Contraseña"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Repite tu contraseña"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleInputChange}
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword(!showPassword)}
+              isLoading={loading}
               required
             />
 
