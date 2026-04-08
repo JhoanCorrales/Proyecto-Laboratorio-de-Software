@@ -9,6 +9,9 @@ export default function Input({
   required = false,
   ...props
 }) {
+  const isEmpty = type === "password" && !value?.trim();
+  const inputType = isEmpty ? "text" : type;
+
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <label className="text-sm font-medium text-slate-700 dark:text-[#92bbc9]">
@@ -17,7 +20,7 @@ export default function Input({
       </label>
 
       <input
-        type={type}
+        type={inputType}
         name={name}
         value={value}
         onChange={onChange}
