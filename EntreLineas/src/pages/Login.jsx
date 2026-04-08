@@ -112,11 +112,11 @@ export default function Login() {
                     </span>
                   </button>
                 </div>
-                <div className="flex justify-end pt-2">
+                {/* <div className="flex justify-end pt-2">
                   <a href="#" className="text-sm text-neutral-muted hover:text-primary underline">
                     ¿Olvidaste tu contraseña?
-                  </a>
-                </div>
+                    </a>
+                </div> */}
               </div>
 
               {/* Error message */}

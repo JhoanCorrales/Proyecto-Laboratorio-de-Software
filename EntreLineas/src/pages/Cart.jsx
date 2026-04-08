@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import { getCart, updateCartItem, removeCartItem } from "../services/cartService";
 import { getCurrentUser } from "../services/authService";
 
-const IVA = 0.04;
+const IVA = 0.19;
 
 // ─── Skeleton loading ─────────────────────────────────────────────────────────
 function SkeletonItem() {
@@ -296,7 +296,7 @@ function Cart() {
                     <span className="text-green-400 font-medium">Gratis</span>
                   </div>
                   <div className="flex justify-between text-neutral-muted text-sm">
-                    <span>Impuestos (IVA 4%)</span>
+                    <span>Impuestos (IVA 19%)</span>
                     <span className="text-white font-medium">
                       ${iva.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
                     </span>
