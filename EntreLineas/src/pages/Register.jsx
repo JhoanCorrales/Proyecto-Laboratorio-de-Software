@@ -47,34 +47,51 @@ export default function Register() {
   };
 
   const validateForm = () => {
-    if (!formData.nombre.trim()) {
-      setError('El nombre es obligatorio');
+    // Expresión regular para validar correo electrónico
+    const emailRegex = /^[a-zA-Z][a-zA-Z0-9_.]*@[a-zA-Z][a-zA-Z0-9]+\.[a-zA-Z]{2,3}(\.[a-zA-Z]{2})?$/;
+
+    // Validar que ningún campo esté vacío
+    const campos = {
+      nombre: 'nombre',
+      apellidos: 'apellidos',
+      email: 'correo electrónico',
+      password: 'contraseña',
+      confirmPassword: 'confirmación de contraseña',
+      telefono: 'teléfono',
+      ciudad: 'ciudad',
+      direccion: 'dirección',
+      departamento: 'departamento',
+      codigo_postal: 'código postal'
+    };
+
+    for (const [key, label] of Object.entries(campos)) {
+      if (!formData[key] || !formData[key].trim()) {
+        setError(`El campo ${label} es obligatorio`);
+        return false;
+      }
+    }
+
+    // Validar formato del email con regex
+    if (!emailRegex.test(formData.email.trim())) {
+      setError('El correo electrónico no tiene un formato válido. Ej: usuario@ejemplo.com');
       return false;
     }
-    if (!formData.email.trim()) {
-      setError('El correo es obligatorio');
-      return false;
-    }
-    if (!formData.email.includes('@')) {
-      setError('El correo no es válido');
-      return false;
-    }
-    if (!formData.password) {
-      setError('La contraseña es obligatoria');
-      return false;
-    }
+
     if (formData.password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres');
       return false;
     }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return false;
     }
+
     if (!isChecked) {
       setError('Debes aceptar el tratamiento de datos');
       return false;
     }
+
     return true;
   };
 
