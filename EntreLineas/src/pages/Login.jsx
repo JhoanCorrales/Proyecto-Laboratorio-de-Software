@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, saveSession } from "../services/authService";
+import { login, saveSession, getCurrentUser } from "../services/authService";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,6 +9,14 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Si el usuario ya está autenticado, redirigir a home
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate("/home");
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

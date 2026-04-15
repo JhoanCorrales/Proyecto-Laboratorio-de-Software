@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { getCurrentUser } from "../services/authService";
+import { getCurrentUser, logout } from "../services/authService";
 import { getCart } from "../services/cartService";
 
 const CATEGORIES = [
@@ -42,7 +42,10 @@ function Navbar({ cartCount: cartCountProp }) {
   const [soloDisponibles, setSoloDisponibles] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [isRoot, setIsRoot] = useState(false);
+  const [user, setUser] = useState(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const panelRef = useRef(null);
+  const profileMenuRef = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -60,6 +63,9 @@ function Navbar({ cartCount: cartCountProp }) {
         setIsRoot(false);
       }
     }
+    // Obtener el usuario actual
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
   }, []);
 
   useEffect(() => {
@@ -78,6 +84,7 @@ function Navbar({ cartCount: cartCountProp }) {
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) setPanelOpen(false);
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) setProfileMenuOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -123,6 +130,13 @@ function Navbar({ cartCount: cartCountProp }) {
     setQuery("");
     setPanelOpen(false);
     navigate("/catalogue");
+  };
+
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+    setProfileMenuOpen(false);
+    navigate("/");
   };
 
   const activeFiltersCount = [
@@ -251,9 +265,77 @@ function Navbar({ cartCount: cartCountProp }) {
               )}
             </button>
           )}
-          <button onClick={() => navigate("/profile/edit")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-slate-300" title="Editar Perfil">
-            <span className="material-symbols-outlined">account_circle</span>
-          </button>
+          
+          {/* Menú de Perfil/Login */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className="p-2 hover:bg-primary/10 rounded-full transition-colors text-slate-300"
+              title={user ? `${user.nombre}` : "Perfil"}
+            >
+              <span className="material-symbols-outlined">account_circle</span>
+            </button>
+            
+            {/* Dropdown Menu */}
+            {profileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-neutral-dark border border-neutral-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                {user ? (
+                  <>
+                    {/* Usuario Autenticado */}
+                    <div className="px-5 py-4 border-b border-neutral-border/50 bg-neutral-accent/30">
+                      <p className="text-sm font-bold text-primary">{user.nombre}</p>
+                      <p className="text-xs text-neutral-muted">{user.email}</p>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <button
+                        onClick={() => {
+                          navigate("/profile/edit");
+                          setProfileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-neutral-border/50 hover:text-primary rounded-lg transition-colors text-sm"
+                      >
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                        Editar perfil
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-sm font-medium"
+                      >
+                        <span className="material-symbols-outlined text-lg">logout</span>
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Usuario No Autenticado */}
+                    <div className="p-3 space-y-2">
+                      <button
+                        onClick={() => {
+                          navigate("/login");
+                          setProfileMenuOpen(false);
+                        }}
+                        className="w-full bg-primary text-background-dark font-bold py-2.5 rounded-lg hover:brightness-110 transition-all text-sm flex items-center justify-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-lg">login</span>
+                        Iniciar sesión
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate("/register");
+                          setProfileMenuOpen(false);
+                        }}
+                        className="w-full border border-primary text-primary font-bold py-2.5 rounded-lg hover:bg-primary/10 transition-all text-sm flex items-center justify-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-lg">person_add</span>
+                        Registrarse
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

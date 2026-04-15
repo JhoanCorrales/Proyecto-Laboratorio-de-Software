@@ -7,6 +7,7 @@ import Select from "../components/Select"
 import { Label } from "../components/ui/label"
 import { motion } from 'motion/react';
 import { departamentos, getCiudades, getCodigoPostal } from '../assets/data/Colombiadata';
+import { getCurrentUser } from '../services/authService';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -15,6 +16,14 @@ export default function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Si el usuario ya está autenticado, redirigir a home
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate("/home");
+    }
+  }, [navigate]);
   
   const [formData, setFormData] = useState({
     nombre: '',

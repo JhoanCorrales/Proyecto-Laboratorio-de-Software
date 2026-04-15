@@ -18,7 +18,11 @@ import ProtectedRoute from './components/ProtectedRoute.jsx'
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Login />, 
+    element: <Home />, 
+  },
+  {
+    path: "/login",
+    element: <Login />,
   },
   {
     path: "/register",
@@ -30,7 +34,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/profile/edit",
-    element: <EditProfile />,
+    element: (
+      <ProtectedRoute>
+        <EditProfile />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/catalogue",
@@ -46,7 +54,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/cart",
-    element: <Cart />,
+    element: (
+      <ProtectedRoute>
+        <Cart />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/role-management",
