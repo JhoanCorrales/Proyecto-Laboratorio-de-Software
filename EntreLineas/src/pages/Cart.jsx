@@ -110,7 +110,21 @@ function Cart() {
   }, [navigate]);
 
   // ── Cambiar cantidad ──
+  const MAX_QUANTITY = 5;
+  
   const handleQuantityChange = async (libroId, newQty) => {
+    // Validar límite máximo
+    if (newQty > MAX_QUANTITY) {
+      showToast(`No puedes comprar más de ${MAX_QUANTITY} libros del mismo título.`, "error");
+      return;
+    }
+    
+    // Validar cantidad mínima (0 para eliminar)
+    if (newQty < 1) {
+      await handleRemove(libroId);
+      return;
+    }
+
     setUpdatingId(libroId);
     try {
       const data = await updateCartItem(libroId, newQty);
@@ -242,7 +256,12 @@ function Cart() {
                                 onClick={() =>
                                   handleQuantityChange(item.libro_id, item.cantidad + 1)
                                 }
-                                className="px-3 py-2 hover:bg-neutral-border text-primary transition-colors"
+                                disabled={item.cantidad >= MAX_QUANTITY}
+                                className={`px-3 py-2 transition-colors ${
+                                  item.cantidad >= MAX_QUANTITY
+                                    ? "text-neutral-muted/50 cursor-not-allowed"
+                                    : "hover:bg-neutral-border text-primary"
+                                }`}
                                 aria-label="Aumentar cantidad"
                               >
                                 <span className="material-symbols-outlined text-lg leading-none">
