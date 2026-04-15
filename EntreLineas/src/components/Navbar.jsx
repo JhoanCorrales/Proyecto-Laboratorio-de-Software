@@ -137,6 +137,10 @@ function Navbar({ cartCount: cartCountProp }) {
     setUser(null);
     setProfileMenuOpen(false);
     navigate("/");
+    // Recarga la página para limpiar el contexto completamente
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const activeFiltersCount = [
