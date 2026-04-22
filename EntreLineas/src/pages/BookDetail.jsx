@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { addToCart } from "../services/cartService";
 import { getCurrentUser } from "../services/authService";
@@ -91,6 +91,7 @@ function SkeletonDetail() {
 function BookDetail() {
   const { bookTitle } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [searchDoc, setSearchDoc] = useState(null);
   const [workData, setWorkData] = useState(null);
@@ -106,8 +107,8 @@ function BookDetail() {
     setTimeout(() => setCartToast({ msg: "", type: "success" }), 3000);
   };
 
-  // Precio estable — se calcula una sola vez cuando llega el título
-  const priceRef = useRef(null);
+  // Precio estable — se pasa desde el estado de navegación o se calcula una sola vez
+  const priceRef = useRef(location.state?.bookPrice ?? null);
 
   useEffect(() => {
     if (!bookTitle) return;
@@ -117,6 +118,8 @@ function BookDetail() {
       setError("");
       setWorkData(null);
       setSearchDoc(null);
+      // Usa la imagen del estado si está disponible
+      setSelectedImg(location.state?.bookImg ?? null);
 
       try {
         // 1. Buscar por título en search.json
@@ -135,13 +138,15 @@ function BookDetail() {
         const doc = searchData.docs[0];
         setSearchDoc(doc);
 
-        // Precio fijo basado en el título
-        priceRef.current = generateRandomPrice(doc.title ?? bookTitle);
+        // Precio fijo: usa el pasado desde el estado, o calcula basado en el título
+        if (!priceRef.current) {
+          priceRef.current = generateRandomPrice(doc.title ?? bookTitle);
+        }
 
         // Imagen principal — cover_i es el campo correcto
         const mainImg = doc.cover_i
           ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
-          : null;
+          : location.state?.bookImg ?? null;
         setSelectedImg(mainImg);
 
         // 2. Obtener descripción desde /works/{key}.json

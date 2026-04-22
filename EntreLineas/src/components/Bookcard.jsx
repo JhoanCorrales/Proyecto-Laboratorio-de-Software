@@ -9,7 +9,9 @@ function BookCard({ title, author, price, priceRaw, img, agotado = false, isbn }
   const [feedback, setFeedback] = useState(null); // "ok" | "err"
 
   const handleClick = () => {
-    navigate(`/catalogue/${encodeURIComponent(title)}/details`);
+    navigate(`/catalogue/${encodeURIComponent(title)}/details`, {
+      state: { bookPrice: priceRaw, bookImg: img }
+    });
   };
 
   const handleAddToCart = async (e) => {
