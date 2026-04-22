@@ -5,55 +5,59 @@ import Navbar from "../components/Navbar";
 export default function Wallet() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("cards");
-  const [cards, setCards] = useState([
-    {
-      id: 1,
-      brand: "VISA",
-      lastDigits: "4242",
-      isDefault: true,
-    },
-    {
-      id: 2,
-      brand: "Mastercard",
-      lastDigits: "8812",
-      isDefault: false,
-    },
-  ]);
+  const [cards, setCards] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [monthlySpending, setMonthlySpending] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [purchases] = useState([
-    {
-      id: 1,
-      date: "12 Oct, 2023",
-      title: "Cien Años de Soledad",
-      amount: "$12.500",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCUcdIss505lZxgM8-fJLz9-QZ-aQl3jfyiec9J1pNmc3YSMK5AunSm3n0dIVcpVJQ5VlyAYwUP4gLltkJ3V7Iu_Rnz3GpxFY9C2txopUR07FqoAt36kN9fFMzuMGqrfrXbwXbS9Aw4l0PO-c1bSC-_gt0Tk30KGEMEjpOpLCqDnybX_NGfM2ju9tU6rcy17JxEjeCWIpN40dEhQCmTa7bPDx9BQHNsEMitkk7hBN3TPiv8O21qgRouTnZ2rukw2WM1k-oWqZ2Uvkk",
-    },
-    {
-      id: 2,
-      date: "08 Oct, 2023",
-      title: "Lumina Premium (Mensual)",
-      amount: "$8.900",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuAFqjrLlJsDeps0i9xpj0J1VlXKBvc1GwXfJI--FxqUoVNpDa2-YIJDDn8tujl37q5PwdR1OA0hm8SEempLt5BcP0vqVBTzM4zp7i1iBwPxAM8fmtcdpm79fDJGYtDHXOjOciVVmidDteunvKDcBwAIgU-xVmpyhrZcZ6Y_5Eoh0FqiCmLjtlcWXnyTq-b3oHOJQusjoQFpWXjspnmo66fTcQOlqqeGvGRFCvEeaFUMLvm-ZyxQSXYXAlLVXy07zo92YuTumqRg000",
-    },
-    {
-      id: 3,
-      date: "05 Oct, 2023",
-      title: "Ficciones - Borges",
-      amount: "$15.800",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuAURE8vGs3SZSFGLOYp3tTY3kd83-gljzjR1x6QocDxkiHoB9j2PIo9xz45dTeJrqW4eMc7k5xmn-KsC30fMebcbsXMysWEliVQG40snNoraNdM7dwULWBJxHuMx4nhjMxvnm12Avfp3P5Uqquy85WMRzHMSaJukNIPiDNIpT0Rs2ko9BOecDh-vU0US_ClH-o_FvDkYdYdYsZSBJt0XIhfRI2iT7QzSXe8zODOziZbycUhS4S8ZIw4NBK2wSpUOdcMXIValjJKw68",
-    },
-    {
-      id: 4,
-      date: "29 Sep, 2023",
-      title: "El Aleph",
-      amount: "$8.000",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuDRJs40eU6798UyrSvxOgZduNT2a5oRj5SUcy1WWsVCNb3C5awL95wV3fkJr10y1XTDjr021ZN3-TYgjAKfA8c-gTyz8FmTyronVTu0sZdGBz88eI7gB_Z8_KIOFoPOp_5TM4leWYTpyCQSb92mgfZvqtyOvspZSALwFNV4lzD8souHZSUc0vo1bj1lPBon2kXjBjXwYvkg0a2U8k_x4Jp7EZLBlchicwpjQXE6lJd8bRDJnTEUNnZndSYRV4OQGuZmUvQsl352Byc",
-    },
-  ]);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    fetchData(token);
+  }, [navigate]);
+
+  const fetchData = async (token) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // Obtener tarjetas
+      const cardsRes = await fetch("http://localhost:4003/api/payment/cards", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (cardsRes.ok) {
+        const cardsData = await cardsRes.json();
+        setCards(cardsData.cards || []);
+      }
+
+      // Obtener gasto mensual
+      const spendingRes = await fetch("http://localhost:4003/api/payment/monthly-spending", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (spendingRes.ok) {
+        const spendingData = await spendingRes.json();
+        setMonthlySpending(spendingData.monthlySpending);
+      }
+
+      // Obtener historial de compras
+      const purchasesRes = await fetch("http://localhost:4003/api/payment/purchases", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (purchasesRes.ok) {
+        const purchasesData = await purchasesRes.json();
+        setPurchases(purchasesData.purchases || []);
+      }
+    } catch (err) {
+      console.error("Error al cargar datos:", err);
+      setError("Error al cargar los datos");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddCard = () => {
     navigate("/payment/add");
@@ -61,17 +65,58 @@ export default function Wallet() {
 
   const handleDeleteCard = (cardId) => {
     if (confirm("¿Estás seguro de que deseas eliminar esta tarjeta?")) {
-      setCards((prev) => prev.filter((card) => card.id !== cardId));
+      deleteCard(cardId);
+    }
+  };
+
+  const deleteCard = async (cardId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`http://localhost:4003/api/payment/cards/${cardId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setCards((prev) => prev.filter((card) => card.id !== cardId));
+        alert("Tarjeta eliminada correctamente");
+      } else {
+        const error = await response.json();
+        alert(error.error || "Error al eliminar la tarjeta");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error de conexión");
     }
   };
 
   const handleSetDefault = (cardId) => {
-    setCards((prev) =>
-      prev.map((card) => ({
-        ...card,
-        isDefault: card.id === cardId,
-      }))
-    );
+    setCardDefault(cardId);
+  };
+
+  const setCardDefault = async (cardId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`http://localhost:4003/api/payment/cards/${cardId}/default`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setCards((prev) =>
+          prev.map((card) => ({
+            ...card,
+            es_principal: card.id === cardId,
+          }))
+        );
+        alert("Tarjeta establecida como predeterminada");
+      } else {
+        alert("Error al actualizar tarjeta");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error de conexión");
+    }
   };
 
   return (
@@ -134,9 +179,20 @@ export default function Wallet() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main Content Area */}
-              <div className="lg:col-span-2 space-y-8">
+            {error && (
+              <div className="mb-6 p-4 bg-red-900/30 border border-red-500/50 rounded-lg text-red-400">
+                {error}
+              </div>
+            )}
+
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-neutral-muted">Cargando datos...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Content Area */}
+                <div className="lg:col-span-2 space-y-8">
                 {/* Financial Summary */}
                 {activeSection === "summary" && (
                   <section className="space-y-8">
@@ -153,7 +209,7 @@ export default function Wallet() {
                             Gasto Mensual
                           </p>
                           <p className="text-4xl font-bold text-primary">
-                            $45.200
+                            ${monthlySpending.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
                           </p>
                         </div>
                       </div>
@@ -166,57 +222,67 @@ export default function Wallet() {
                         </span>
                         Últimas Compras
                       </h3>
-                      <div className="bg-neutral-dark rounded-xl border border-neutral-border/30 overflow-hidden">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-neutral-accent/30 border-b border-neutral-border/30">
-                              <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-semibold">
-                                Fecha
-                              </th>
-                              <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-semibold">
-                                Libro / Servicio
-                              </th>
-                              <th className="px-6 py-4 text-right text-xs uppercase tracking-widest text-neutral-muted font-semibold">
-                                Monto
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-neutral-border/30">
-                            {purchases.map((purchase) => (
-                              <tr
-                                key={purchase.id}
-                                className="hover:bg-primary/5 transition-colors"
-                              >
-                                <td className="px-6 py-4 text-sm text-neutral-muted">
-                                  {purchase.date}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-10 bg-neutral-accent rounded flex-shrink-0 overflow-hidden">
-                                      <img
-                                        src={purchase.image}
-                                        alt={purchase.title}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                    <span className="text-slate-100 font-medium">
-                                      {purchase.title}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-right font-bold text-primary">
-                                  {purchase.amount}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        <div className="p-4 text-center border-t border-neutral-border/30">
-                          <button className="text-neutral-muted hover:text-primary transition-colors text-sm font-bold uppercase tracking-wider">
-                            Ver historial completo
-                          </button>
+                      {purchases.length === 0 ? (
+                        <div className="text-center py-12 bg-neutral-dark rounded-xl border border-neutral-border/30">
+                          <p className="text-neutral-muted">No hay compras registradas</p>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="bg-neutral-dark rounded-xl border border-neutral-border/30 overflow-hidden">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-neutral-accent/30 border-b border-neutral-border/30">
+                                <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-semibold">
+                                  Fecha
+                                </th>
+                                <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-semibold">
+                                  Libro / Servicio
+                                </th>
+                                <th className="px-6 py-4 text-right text-xs uppercase tracking-widest text-neutral-muted font-semibold">
+                                  Monto
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-border/30">
+                              {purchases.map((purchase) => (
+                                <tr
+                                  key={purchase.id}
+                                  className="hover:bg-primary/5 transition-colors"
+                                >
+                                  <td className="px-6 py-4 text-sm text-neutral-muted">
+                                    {new Date(purchase.fecha).toLocaleDateString("es-CO")}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      {purchase.items[0]?.portada_url && (
+                                        <div className="w-8 h-10 bg-neutral-accent rounded flex-shrink-0 overflow-hidden">
+                                          <img
+                                            src={purchase.items[0].portada_url}
+                                            alt={purchase.items[0].titulo}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                      )}
+                                      <span className="text-slate-100 font-medium">
+                                        {purchase.items[0]?.titulo || "Compra sin detalles"}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right font-bold text-primary">
+                                    ${purchase.total?.toLocaleString("es-CO", {
+                                      minimumFractionDigits: 0,
+                                    })}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <div className="p-4 text-center border-t border-neutral-border/30">
+                            <button className="text-neutral-muted hover:text-primary transition-colors text-sm font-bold uppercase tracking-wider">
+                              Ver historial completo
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </section>
                 )}
@@ -269,24 +335,24 @@ export default function Wallet() {
 
                             <div className="relative z-10">
                               <p className="text-lg font-bold text-white mb-1">
-                                {card.brand}
+                                {card.tipo_tarjeta}
                               </p>
                               <p className="text-neutral-muted font-mono">
-                                •••• •••• •••• {card.lastDigits}
+                                {card.numero_enmascarado}
                               </p>
 
                               <div className="mt-8 flex justify-between items-center">
                                 <span
                                   className={`text-xs font-bold px-3 py-1 rounded ${
-                                    card.isDefault
+                                    card.es_principal
                                       ? "bg-primary/20 text-primary"
                                       : "bg-neutral-accent/30 text-neutral-muted"
                                   }`}
                                 >
-                                  {card.isDefault ? "PREFERIDA" : "SECUNDARIA"}
+                                  {card.es_principal ? "PREFERIDA" : "SECUNDARIA"}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  {!card.isDefault && (
+                                  {!card.es_principal && (
                                     <button
                                       onClick={() => handleSetDefault(card.id)}
                                       className="text-primary hover:text-primary/80 p-2 rounded-lg transition-colors active:scale-95"
@@ -356,6 +422,7 @@ export default function Wallet() {
                 </div>
               </aside>
             </div>
+            )}
           </main>
         </div>
       </div>

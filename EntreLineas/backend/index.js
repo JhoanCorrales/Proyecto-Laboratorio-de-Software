@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import db from "./db/index.js";
 import authRouter from "./routes/auth.js";
 import cartRouter from "./routes/cart.js";
+import paymentRouter from "./routes/payment.js";
 
 dotenv.config();
 
@@ -69,6 +70,9 @@ app.use("/api/auth", authRouter);
 
 // Cart routes
 app.use("/api/cart", cartRouter);
+
+// Payment routes
+app.use("/api/payment", paymentRouter);
 
 // 404 handler
 app.use((req, res) => {

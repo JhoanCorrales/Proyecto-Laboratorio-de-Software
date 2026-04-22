@@ -66,7 +66,7 @@ export default function AddPaymentMethod() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validations
+    // Validaciones
     if (!formData.cardholderName.trim()) {
       alert("Por favor ingresa el nombre del titular");
       return;
@@ -88,10 +88,47 @@ export default function AddPaymentMethod() {
       return;
     }
 
-    // TODO: Send data to backend
-    console.log("Form submitted:", formData);
-    alert("Tarjeta guardada correctamente");
-    navigate(-1);
+    // Guardar en backend
+    saveCard();
+  };
+
+  const saveCard = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Debes estar autenticado");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:4003/api/payment/cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          numeroTarjeta: formData.cardNumber,
+          titular: formData.cardholderName,
+          fechaExpiracion: formData.expiryDate,
+          cvv: formData.cvv,
+          alias: formData.alias,
+          esDefault: formData.isDefault,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || "Error al guardar la tarjeta");
+        return;
+      }
+
+      alert("¡Tarjeta guardada correctamente!");
+      navigate("/wallet");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error de conexión con el servidor");
+    }
   };
 
   return (
