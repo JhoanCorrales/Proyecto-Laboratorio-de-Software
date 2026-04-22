@@ -13,6 +13,8 @@ import BookDetail from './pages/BookDetail.jsx'
 import Categories from './pages/Categories.jsx'
 import Cart from './pages/Cart.jsx'
 import RoleManagement from './pages/RoleManagement.jsx'
+import AddPaymentMethod from './pages/AddPaymentMethod.jsx'
+import Wallet from './pages/Wallet.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 const router = createBrowserRouter([
@@ -65,6 +67,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute requiredRole="Root">
         <RoleManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/payment/add",
+    element: (
+      <ProtectedRoute>
+        <AddPaymentMethod />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/wallet",
+    element: (
+      <ProtectedRoute>
+        <Wallet />
       </ProtectedRoute>
     ),
   }
