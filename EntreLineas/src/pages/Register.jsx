@@ -385,7 +385,7 @@ export default function Register() {
         <div className="p-6 bg-slate-50 dark:bg-[#111e22] border-t border-slate-200 dark:border-[#325a67] text-center">
           <p className="text-slate-600 dark:text-[#92bbc9] text-sm">
             ¿Ya tienes una cuenta?
-            <a href="/" className="text-primary font-semibold hover:underline ml-1 cursor-pointer">
+            <a href="/login" className="text-primary font-semibold hover:underline ml-1 cursor-pointer">
               Iniciar sesión
             </a>
           </p>
