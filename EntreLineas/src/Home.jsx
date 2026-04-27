@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
@@ -6,9 +6,11 @@ import FeaturedBooks from "./components/FeaturedBooks";
 import ServicesSection from "./components/ServicesSection";
 import CategoriesSection from "./components/CategoriesSection";
 import Footerhome from "./components/Footerhome";
+import AuthRequiredModal from "./components/AuthRequiredModal";
 
 function Home() {
   const navigate = useNavigate();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     // Si el usuario es Root, redirigir a role-management
@@ -28,8 +30,9 @@ function Home() {
   return (
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
       <Navbar />
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
       <Hero />
-      <FeaturedBooks />
+      <FeaturedBooks onAuthRequired={() => setShowAuthModal(true)} />
       <ServicesSection />
       <CategoriesSection />
       <Footerhome />

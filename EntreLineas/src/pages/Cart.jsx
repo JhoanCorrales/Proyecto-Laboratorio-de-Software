@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import AuthRequiredModal from "../components/AuthRequiredModal";
 import { getCart, updateCartItem, removeCartItem } from "../services/cartService";
 import { getCurrentUser } from "../services/authService";
 
@@ -81,6 +82,7 @@ function Cart() {
   const [updatingId, setUpdatingId] = useState(null); // libro_id en proceso
   const [toast, setToast] = useState({ message: "", type: "success" });
   const [coupon, setCoupon] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -91,7 +93,7 @@ function Cart() {
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
-      navigate("/");
+      setShowAuthModal(true);
       return;
     }
 
@@ -159,6 +161,7 @@ function Cart() {
   return (
     <div className="bg-background-dark font-display text-slate-100 min-h-screen">
       <Navbar cartCount={totalItems} />
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="max-w-7xl mx-auto px-4 md:px-10 pt-24 pb-28 md:pb-12">
         {/* Header */}

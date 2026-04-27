@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import BookCard from "../components/BookCard";
+import AuthRequiredModal from "../components/AuthRequiredModal";
 
 const PAGE_SIZE = 20;
 const USD_TO_COP = 4000;
@@ -55,6 +56,7 @@ function Catalogue() {
   const [priceMin, setPriceMin] = useState(initialPriceMin);
   const [priceMax, setPriceMax] = useState(initialPriceMax);
   const [soloDisponibles, setSoloDisponibles] = useState(initialDisponibles);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const buildUrl = useCallback(
     (pageNum) => {
@@ -183,6 +185,7 @@ function Catalogue() {
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar />
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
         {/* Búsqueda móvil */}
         <div className="md:hidden px-6 py-4 bg-background-dark/60">
@@ -236,7 +239,7 @@ function Catalogue() {
           {!loading && displayBooks.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {displayBooks.map((book, i) => (
-                <BookCard key={`${book.id}-${i}`} {...book} />
+                <BookCard key={`${book.id}-${i}`} {...book} onAuthRequired={() => setShowAuthModal(true)} />
               ))}
             </div>
           )}

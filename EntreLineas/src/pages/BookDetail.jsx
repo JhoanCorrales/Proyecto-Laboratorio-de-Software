@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import AuthRequiredModal from "../components/AuthRequiredModal";
 import { addToCart } from "../services/cartService";
 import { getCurrentUser } from "../services/authService";
 
@@ -101,6 +102,7 @@ function BookDetail() {
   const [selectedImg, setSelectedImg] = useState(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [cartToast, setCartToast] = useState({ msg: "", type: "success" });
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const showCartToast = (msg, type = "success") => {
     setCartToast({ msg, type });
@@ -208,7 +210,7 @@ function BookDetail() {
   const handleAddToCart = async () => {
     const user = getCurrentUser();
     if (!user) {
-      navigate("/");
+      setShowAuthModal(true);
       return;
     }
     setAddingToCart(true);
@@ -243,6 +245,7 @@ function BookDetail() {
   return (
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
       <Navbar />
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="max-w-[1200px] mx-auto w-full px-4 md:px-10 py-6">
         {/* Breadcrumb */}
@@ -416,7 +419,17 @@ function BookDetail() {
                       {cartToast.msg}
                     </div>
                   )}
-                  <button className="w-full border-2 border-primary text-primary hover:bg-primary/10 font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
+                  <button 
+                    className="w-full border-2 border-primary text-primary hover:bg-primary/10 font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                    onClick={() => {
+                      const user = getCurrentUser();
+                      if (!user) {
+                        setShowAuthModal(true);
+                      } else {
+                        showCartToast("Libro reservado");
+                      }
+                    }}
+                  >
                     <span className="material-symbols-outlined">bookmark</span>
                     Reservar libro
                   </button>

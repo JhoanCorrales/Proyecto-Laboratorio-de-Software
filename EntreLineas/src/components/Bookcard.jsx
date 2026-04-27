@@ -3,7 +3,7 @@ import { useState } from "react";
 import { addToCart } from "../services/cartService";
 import { getCurrentUser } from "../services/authService";
 
-function BookCard({ title, author, price, priceRaw, img, agotado = false, isbn }) {
+function BookCard({ title, author, price, priceRaw, img, agotado = false, isbn, onAuthRequired }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [feedback, setFeedback] = useState(null); // "ok" | "err"
@@ -18,7 +18,7 @@ function BookCard({ title, author, price, priceRaw, img, agotado = false, isbn }
     e.stopPropagation(); // evitar navegar al detalle
     const user = getCurrentUser();
     if (!user) {
-      navigate("/");
+      onAuthRequired?.();
       return;
     }
     setAdding(true);
