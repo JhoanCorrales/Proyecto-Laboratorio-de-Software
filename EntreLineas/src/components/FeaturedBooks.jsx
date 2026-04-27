@@ -11,11 +11,13 @@ function generateRandomPrice(title = "") {
 
 function parseBook(item) {
   if (!item.cover_i) return null;
+  const priceRaw = generateRandomPrice(item.title);
   return {
     id: item.key ?? item.title,
     title: item.title ?? "Sin título",
     author: item.author_name?.[0] ?? "Autor desconocido",
-    price: `$${generateRandomPrice(item.title).toLocaleString("es-CO")}`,
+    price: `$${priceRaw.toLocaleString("es-CO")}`,
+    priceRaw: priceRaw,
     img: `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`,
     agotado: false,
   };
