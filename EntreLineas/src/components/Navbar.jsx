@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { getCurrentUser, logout } from "../services/authService";
 import { getCart } from "../services/cartService";
+import AuthRequiredModal from "./AuthRequiredModal";
 
 const CATEGORIES = [
   { label: "Todos los géneros", query: "fiction", icon: "filter_list" },
@@ -44,6 +45,7 @@ function Navbar({ cartCount: cartCountProp }) {
   const [isRoot, setIsRoot] = useState(false);
   const [user, setUser] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const panelRef = useRef(null);
   const profileMenuRef = useRef(null);
 
@@ -260,7 +262,17 @@ function Navbar({ cartCount: cartCountProp }) {
             </button>
           )}
           {!isRoot && (
-            <button onClick={() => navigate("/cart")} className="p-2 hover:bg-primary/10 rounded-full transition-colors relative text-slate-300">
+            <button 
+              onClick={() => {
+                const currentUser = getCurrentUser();
+                if (!currentUser) {
+                  setShowAuthModal(true);
+                  return;
+                }
+                navigate("/cart");
+              }} 
+              className="p-2 hover:bg-primary/10 rounded-full transition-colors relative text-slate-300"
+            >
               <span className="material-symbols-outlined">shopping_cart</span>
               {cartCount > 0 && (
                 <span className="absolute top-1 right-1 bg-primary text-background-dark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
@@ -352,6 +364,7 @@ function Navbar({ cartCount: cartCountProp }) {
           </div>
         </div>
       </div>
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </nav>
   );
 }
