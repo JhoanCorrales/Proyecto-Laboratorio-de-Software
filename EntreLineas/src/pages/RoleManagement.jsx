@@ -32,9 +32,25 @@ function StatusDot({ estado }) {
 }
 
 function CreateAdminModal({ onClose, onSuccess }) {
-  const [form, setForm] = useState({ nombre: "", apellidos: "", email: "", password: "" });
+  const [form, setForm] = useState({ nombre: "", apellidos: "", email: "" });
+  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Generar contraseña aleatoria
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  useEffect(() => {
+    setGeneratedPassword(generatePassword());
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,11 +65,11 @@ function CreateAdminModal({ onClose, onSuccess }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, password: generatedPassword }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      onSuccess("Administrador creado exitosamente.");
+      onSuccess(`Administrador creado exitosamente. Contraseña temporal: ${generatedPassword}`);
       onClose();
     } catch (err) {
       setError(err.message);
@@ -114,16 +130,35 @@ function CreateAdminModal({ onClose, onSuccess }) {
               onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-neutral-muted text-xs font-medium">Contraseña</label>
-            <input
-              required
-              type="password"
-              className="w-full bg-neutral-accent border border-neutral-border rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Mínimo 8 caracteres"
-              value={form.password}
-              onChange={(e) => setForm(p => ({ ...p, password: e.target.value }))}
-            />
+          <div className="space-y-1 bg-neutral-accent/30 p-3 rounded-lg border border-neutral-border">
+            <label className="text-neutral-muted text-xs font-medium">Contraseña Temporal (Generada)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type={showPassword ? "text" : "password"}
+                readOnly
+                className="flex-1 bg-neutral-accent border border-neutral-border rounded-lg px-3 py-2.5 text-sm text-white outline-none"
+                value={generatedPassword}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedPassword);
+                }}
+                className="p-2 hover:bg-primary/20 rounded-lg transition-colors text-primary"
+                title="Copiar contraseña"
+              >
+                <span className="material-symbols-outlined text-sm">content_copy</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="p-2 hover:bg-primary/20 rounded-lg transition-colors text-primary"
+                title="Ver/Ocultar"
+              >
+                <span className="material-symbols-outlined text-sm">{showPassword ? "visibility_off" : "visibility"}</span>
+              </button>
+            </div>
+            <p className="text-xs text-neutral-muted mt-2">El administrador debe cambiarla en su primer acceso.</p>
           </div>
           <div className="flex gap-3 pt-2">
             <button
@@ -152,6 +187,7 @@ function ChangeRoleModal({ user, onClose, onSuccess }) {
   const [selectedRole, setSelectedRole] = useState(user.roles?.[0] ?? "Cliente");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const isRootUser = user.roles?.[0] === "Root";
 
   const handleSubmit = async () => {
     setError("");
@@ -191,28 +227,37 @@ function ChangeRoleModal({ user, onClose, onSuccess }) {
           Usuario: <span className="text-white font-semibold">{user.nombre}</span>
         </p>
 
+        {isRootUser && (
+          <div className="p-3 bg-yellow-900/30 text-yellow-400 rounded-lg text-sm border border-yellow-600/30 flex items-start gap-2">
+            <span className="material-symbols-outlined text-lg flex-shrink-0">info</span>
+            <span>No se puede cambiar el rol de un usuario Root. Este rol es protegido del sistema.</span>
+          </div>
+        )}
+
         {error && (
           <div className="p-3 bg-red-900/30 text-red-400 rounded-lg text-sm border border-red-600/30">
             {error}
           </div>
         )}
 
-        <div className="space-y-2">
-          {ROLES.filter(r => r !== "Root").map((rol) => (
-            <button
-              key={rol}
-              onClick={() => setSelectedRole(rol)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
-                selectedRole === rol
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-neutral-border bg-neutral-accent/30 text-slate-300 hover:border-primary/40"
-              }`}
-            >
-              {rol}
-              {selectedRole === rol && <span className="material-symbols-outlined text-sm">check_circle</span>}
-            </button>
-          ))}
-        </div>
+        {!isRootUser && (
+          <div className="space-y-2">
+            {ROLES.filter(r => r !== "Root").map((rol) => (
+              <button
+                key={rol}
+                onClick={() => setSelectedRole(rol)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                  selectedRole === rol
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-neutral-border bg-neutral-accent/30 text-slate-300 hover:border-primary/40"
+                }`}
+              >
+                {rol}
+                {selectedRole === rol && <span className="material-symbols-outlined text-sm">check_circle</span>}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button
@@ -224,8 +269,8 @@ function ChangeRoleModal({ user, onClose, onSuccess }) {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-background-dark font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+            disabled={loading || isRootUser}
+            className="flex-1 py-2.5 rounded-lg bg-primary text-background-dark font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Guardando..." : "Guardar"}
           </button>
@@ -434,7 +479,13 @@ function RoleManagement() {
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => setChangeRoleUser(user)}
-                            className="text-primary hover:text-white bg-primary/10 hover:bg-primary px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                            disabled={user.roles?.[0] === "Root"}
+                            title={user.roles?.[0] === "Root" ? "No se puede cambiar el rol de Root" : "Cambiar rol"}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                              user.roles?.[0] === "Root"
+                                ? "text-neutral-muted bg-neutral-accent/30 cursor-not-allowed opacity-50"
+                                : "text-primary hover:text-white bg-primary/10 hover:bg-primary"
+                            }`}
                           >
                             Cambiar rol
                           </button>
