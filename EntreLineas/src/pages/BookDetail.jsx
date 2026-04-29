@@ -397,8 +397,9 @@ function BookDetail() {
                       {addingToCart ? "Agregando..." : "Agregar al carrito"}
                     </button>
                     <button
-                      className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
-                      onClick={handleAddToCart}
+                      className="flex-1 bg-neutral-400 text-gray-600 font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+                      disabled
+                      title="Módulo en construcción"
                     >
                       <span className="material-symbols-outlined">payments</span>
                       Comprar ahora
@@ -420,15 +421,9 @@ function BookDetail() {
                     </div>
                   )}
                   <button 
-                    className="w-full border-2 border-primary text-primary hover:bg-primary/10 font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
-                    onClick={() => {
-                      const user = getCurrentUser();
-                      if (!user) {
-                        setShowAuthModal(true);
-                      } else {
-                        showCartToast("Libro reservado");
-                      }
-                    }}
+                    className="w-full border-2 border-gray-400 text-gray-500 font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+                    disabled
+                    title="Módulo en construcción"
                   >
                     <span className="material-symbols-outlined">bookmark</span>
                     Reservar libro
@@ -475,13 +470,13 @@ function BookDetail() {
                 </div>
 
                 {/* Envío */}
-                <div className="flex flex-col justify-center items-center bg-background-light dark:bg-background-dark p-6 rounded-xl border border-primary/20">
-                  <span className="material-symbols-outlined text-primary text-5xl mb-4">local_shipping</span>
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Envío Gratuito</h4>
-                  <p className="text-neutral-muted text-center text-sm">
-                    Este libro califica para envío express gratuito a todo el país. Recíbelo en 24-48 horas hábiles.
+                <div className="flex flex-col justify-center items-center bg-background-light dark:bg-background-dark p-6 rounded-xl border border-gray-300 dark:border-gray-600 opacity-60">
+                  <span className="material-symbols-outlined text-gray-400 text-5xl mb-4">local_shipping</span>
+                  <h4 className="text-lg font-bold text-gray-500 mb-2">Envío Gratuito</h4>
+                  <p className="text-gray-400 text-center text-sm">
+                    Módulo en construcción
                   </p>
-                  <button className="mt-4 text-primary font-bold hover:underline text-sm uppercase">
+                  <button className="mt-4 text-gray-400 font-bold text-sm uppercase cursor-not-allowed opacity-50" disabled>
                     Ver métodos de envío
                   </button>
                 </div>
