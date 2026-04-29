@@ -242,7 +242,7 @@ function ChangeRoleModal({ user, onClose, onSuccess }) {
 
         {!isRootUser && (
           <div className="space-y-2">
-            {ROLES.filter(r => r !== "Root").map((rol) => (
+            {ROLES.filter(r => r !== "Root" && r !== "Visitante").map((rol) => (
               <button
                 key={rol}
                 onClick={() => setSelectedRole(rol)}
