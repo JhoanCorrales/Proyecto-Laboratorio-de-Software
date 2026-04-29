@@ -110,6 +110,7 @@ function Catalogue() {
         setBooks(parsed);
         setTotalResults(parsed.length);
         setHasMore((data.docs ?? []).length >= PAGE_SIZE);
+        setError(""); // Limpiar error cuando la carga es exitosa
       } catch (err) {
         console.error("Error al cargar libros:", err);
         setError("No se pudieron cargar los libros. Intenta de nuevo.");
@@ -140,6 +141,7 @@ function Catalogue() {
       setBooks((prev) => [...prev, ...parsed]);
       setPage(nextPage);
       setHasMore((data.docs ?? []).length >= PAGE_SIZE);
+      setError(""); // Limpiar error cuando la carga de más libros es exitosa
     } catch (err) {
       setError("Error al cargar más libros. Intenta de nuevo.");
     } finally {

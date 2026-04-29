@@ -139,6 +139,7 @@ function BookDetail() {
 
         const doc = searchData.docs[0];
         setSearchDoc(doc);
+        setError(""); // Limpiar error cuando la carga es exitosa
 
         // Precio fijo: usa el pasado desde el estado, o calcula basado en el título
         if (!priceRef.current) {
