@@ -313,16 +313,18 @@ function Navbar({ cartCount: cartCountProp }) {
                         <span className="material-symbols-outlined text-lg">edit</span>
                         Editar perfil
                       </button>
-                      <button
-                        onClick={() => {
-                          navigate("/wallet");
-                          setProfileMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-neutral-border/50 hover:text-primary rounded-lg transition-colors text-sm"
-                      >
-                        <span className="material-symbols-outlined text-lg">credit_card</span>
-                        Mi Cartera
-                      </button>
+                      {!isRoot && (
+                        <button
+                          onClick={() => {
+                            navigate("/wallet");
+                            setProfileMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-neutral-border/50 hover:text-primary rounded-lg transition-colors text-sm"
+                        >
+                          <span className="material-symbols-outlined text-lg">credit_card</span>
+                          Mi Cartera
+                        </button>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-sm font-medium"

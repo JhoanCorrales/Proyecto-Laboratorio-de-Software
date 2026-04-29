@@ -3,7 +3,7 @@ import FormField from "./FormField";
 
 const AVATAR_URL = "https://lh3.googleusercontent.com/aida-public/AB6AXuCyuttLtyJ3ZiAGQe3YsMQEfrQamkactX_VFNZDSGheYVy-NvI9whj5QTDSRwzh0GpXOlhyfM9clzdJHoMnN4sPKZH4vNWKEx9bB8haydlyRPOme71SuqhR9pdXXQApuuf7Un_aVthTvmaXtGq4IQohhljptdGKVqKNxy5qksudDLlrq_PnkLOX_v0zOdv6ap3InYZBF2uYvt5sexdTDvXZEIzV51oPUxPO3oo1WTt1tBM_wFZeh33NptXva3wkgiHiUbWLOkJrEdk";
 
-function PersonalInfoSection({ data, onChange, onLogout }) {
+function PersonalInfoSection({ data, onChange, onLogout, isRoot = false }) {
   return (
     <div className="flex-1 p-8 border-r border-neutral-border/30">
       <div className="flex justify-between items-center mb-4">
@@ -32,37 +32,41 @@ function PersonalInfoSection({ data, onChange, onLogout }) {
           value={data.email || ""}
           readOnly
         />
-        <FormField
-          label="Número de teléfono"
-          type="tel"
-          placeholder="+XX XXX XXX XXX"
-          value={data.telefono || ""}
-          onChange={(e) => onChange("telefono", e.target.value)}
-        />
-        <FormField
-          label="Dirección"
-          placeholder="Tu dirección"
-          value={data.direccion || ""}
-          onChange={(e) => onChange("direccion", e.target.value)}
-        />
-        <FormField
-          label="Ciudad"
-          placeholder="Tu ciudad"
-          value={data.ciudad || ""}
-          onChange={(e) => onChange("ciudad", e.target.value)}
-        />
-        <FormField
-          label="Departamento"
-          placeholder="Tu departamento"
-          value={data.departamento || ""}
-          onChange={(e) => onChange("departamento", e.target.value)}
-        />
-        <FormField
-          label="Código Postal"
-          placeholder="Tu código postal"
-          value={data.codigo_postal || ""}
-          onChange={(e) => onChange("codigo_postal", e.target.value)}
-        />
+        {!isRoot && (
+          <>
+            <FormField
+              label="Número de teléfono"
+              type="tel"
+              placeholder="+XX XXX XXX XXX"
+              value={data.telefono || ""}
+              onChange={(e) => onChange("telefono", e.target.value)}
+            />
+            <FormField
+              label="Dirección"
+              placeholder="Tu dirección"
+              value={data.direccion || ""}
+              onChange={(e) => onChange("direccion", e.target.value)}
+            />
+            <FormField
+              label="Ciudad"
+              placeholder="Tu ciudad"
+              value={data.ciudad || ""}
+              onChange={(e) => onChange("ciudad", e.target.value)}
+            />
+            <FormField
+              label="Departamento"
+              placeholder="Tu departamento"
+              value={data.departamento || ""}
+              onChange={(e) => onChange("departamento", e.target.value)}
+            />
+            <FormField
+              label="Código Postal"
+              placeholder="Tu código postal"
+              value={data.codigo_postal || ""}
+              onChange={(e) => onChange("codigo_postal", e.target.value)}
+            />
+          </>
+        )}
       </div>
     </div>
   );

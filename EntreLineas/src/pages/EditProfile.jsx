@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import PersonalInfoSection from "../components/profile/PersonalInfoSection";
 import SecuritySection from "../components/profile/SecuritySection";
 import ShippingSection from "../components/profile/ShippingSection";
+import { getCurrentUser } from "../services/authService";
 
 const INITIAL_STATE = {
   nombre: "",
@@ -17,6 +18,9 @@ const INITIAL_STATE = {
 
 function EditProfile() {
   const navigate = useNavigate();
+  const user = getCurrentUser();
+  const isRoot = user?.roles?.includes("Root");
+  
   const [personal, setPersonal] = useState(INITIAL_STATE);
   const [originalData, setOriginalData] = useState(INITIAL_STATE);
   const [loading, setLoading] = useState(true);
@@ -168,12 +172,13 @@ function EditProfile() {
                 data={personal}
                 onChange={handleChange}
                 onLogout={handleLogout}
+                isRoot={isRoot}
               />
 
               {/* Columna derecha: seguridad + envío — comparten el mismo estado */}
               <div className="flex-1 p-8 flex flex-col gap-10">
                 <SecuritySection />
-                <ShippingSection data={personal} onChange={handleChange} />
+                {!isRoot && <ShippingSection data={personal} onChange={handleChange} />}
               </div>
             </div>
 
