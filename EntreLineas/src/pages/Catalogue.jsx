@@ -258,7 +258,7 @@ function Catalogue() {
             </div>
           )}
 
-          {!loading && hasMore && displayBooks.length > 0 && !hayFiltrosLocales && (
+          {!loading && hasMore && books.length > 0 && (
             <div className="flex justify-center mt-12 mb-8">
               <button
                 onClick={handleLoadMore}
