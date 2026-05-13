@@ -3,6 +3,51 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { addCard } from "../services/walletService";
 
+// Funciones de validación de tarjetas
+const detectCardType = (cardNumber) => {
+  const cleaned = cardNumber.replace(/\s/g, "");
+  
+  // Visa: comienza con 4
+  if (/^4/.test(cleaned)) return "VISA";
+  
+  // Mastercard: 51-55 o 2221-2720
+  if (/^(5[1-5]|2[2-7]|^221[0-9]|^222[0-9]|^2[3-6][0-9]{2}|^27[01][0-9]|^2720)/.test(cleaned)) return "Mastercard";
+  
+  // American Express: 34 o 37
+  if (/^3[47]/.test(cleaned)) return "American Express";
+  
+  // Discover: 6011, 622, 64, 65
+  if (/^(6011|622|64|65)/.test(cleaned)) return "Discover";
+  
+  // Diners Club: 300-305, 36, 38
+  if (/^(30[0-5]|36|38)/.test(cleaned)) return "Diners Club";
+  
+  return null;
+};
+
+// Algoritmo de Luhn para validar número de tarjeta
+const validateLuhn = (cardNumber) => {
+  const cleaned = cardNumber.replace(/\s/g, "");
+  if (!/^\d{13,19}$/.test(cleaned)) return false;
+  
+  let sum = 0;
+  let isEven = false;
+  
+  for (let i = cleaned.length - 1; i >= 0; i--) {
+    let digit = parseInt(cleaned[i], 10);
+    
+    if (isEven) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    
+    sum += digit;
+    isEven = !isEven;
+  }
+  
+  return sum % 10 === 0;
+};
+
 export default function AddPaymentMethod() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -44,6 +89,16 @@ export default function AddPaymentMethod() {
       ...prev,
       numeroTarjeta: formatted,
     }));
+    
+    // Detectar tipo de tarjeta automáticamente
+    const detectedType = detectCardType(formatted);
+    if (detectedType && detectedType !== formData.tipoTarjeta) {
+      setFormData((prev) => ({
+        ...prev,
+        tipoTarjeta: detectedType,
+      }));
+    }
+    
     if (errors.numeroTarjeta) {
       setErrors((prev) => ({
         ...prev,
@@ -94,6 +149,14 @@ export default function AddPaymentMethod() {
       newErrors.numeroTarjeta = "El número de tarjeta es requerido";
     } else if (!/^\d{13,19}$/.test(numeroTarjetaLimpio)) {
       newErrors.numeroTarjeta = "Número de tarjeta inválido (13-19 dígitos)";
+    } else if (!validateLuhn(numeroTarjetaLimpio)) {
+      newErrors.numeroTarjeta = "El número de tarjeta no es válido (validación Luhn)";
+    } else {
+      // Validar que el prefijo coincida con el tipo de tarjeta seleccionado
+      const detectedType = detectCardType(numeroTarjetaLimpio);
+      if (detectedType && detectedType !== formData.tipoTarjeta) {
+        newErrors.numeroTarjeta = `El prefijo no corresponde a ${formData.tipoTarjeta}. Se detectó ${detectedType}`;
+      }
     }
 
     // Validar fecha de vencimiento
@@ -155,6 +218,30 @@ export default function AddPaymentMethod() {
               <p className="text-slate-400 mt-1">
                 Registra un nuevo método de pago para tu suscripción
               </p>
+              
+              {/* Iconos de tarjetas soportadas */}
+              <div className="flex gap-4 mt-4 pt-4 border-t border-neutral-border/30">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="material-symbols-outlined text-2xl text-blue-500">credit_card</span>
+                  <span className="text-xs text-neutral-muted">Visa</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="material-symbols-outlined text-2xl text-red-500">credit_card</span>
+                  <span className="text-xs text-neutral-muted">Mastercard</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="material-symbols-outlined text-2xl text-blue-400">credit_card</span>
+                  <span className="text-xs text-neutral-muted">Amex</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="material-symbols-outlined text-2xl text-gray-500">credit_card</span>
+                  <span className="text-xs text-neutral-muted">Diners</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="material-symbols-outlined text-2xl text-orange-500">credit_card</span>
+                  <span className="text-xs text-neutral-muted">Discover</span>
+                </div>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -209,45 +296,27 @@ export default function AddPaymentMethod() {
                 )}
               </div>
 
-              {/* Row: Vencimiento y Tipo de Tarjeta */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-slate-200">
-                    Fecha de vencimiento
-                  </label>
-                  <input
-                    type="text"
-                    name="fechaExpiracion"
-                    value={formData.fechaExpiracion}
-                    onChange={handleExpiryDateChange}
-                    placeholder="MM/YY"
-                    maxLength="5"
-                    className={`form-input w-full rounded-lg bg-neutral-accent border-2 transition-colors focus:ring-0 text-slate-100 h-12 px-4 placeholder:text-slate-500 ${
-                      errors.fechaExpiracion
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-transparent focus:border-primary"
-                    }`}
-                  />
-                  {errors.fechaExpiracion && (
-                    <p className="text-xs text-red-400">{errors.fechaExpiracion}</p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-slate-200">
-                    Tipo de tarjeta
-                  </label>
-                  <select
-                    name="tipoTarjeta"
-                    value={formData.tipoTarjeta}
-                    onChange={handleInputChange}
-                    className="form-input w-full rounded-lg bg-neutral-accent border-2 border-transparent transition-colors focus:border-primary focus:ring-0 text-slate-100 h-12 px-4"
-                  >
-                    <option value="VISA">VISA</option>
-                    <option value="Mastercard">Mastercard</option>
-                    <option value="American Express">American Express</option>
-                    <option value="Diners Club">Diners Club</option>
-                  </select>
-                </div>
+              {/* Row: Vencimiento */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-200">
+                  Fecha de vencimiento
+                </label>
+                <input
+                  type="text"
+                  name="fechaExpiracion"
+                  value={formData.fechaExpiracion}
+                  onChange={handleExpiryDateChange}
+                  placeholder="MM/YY"
+                  maxLength="5"
+                  className={`form-input w-full rounded-lg bg-neutral-accent border-2 transition-colors focus:ring-0 text-slate-100 h-12 px-4 placeholder:text-slate-500 ${
+                    errors.fechaExpiracion
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-transparent focus:border-primary"
+                  }`}
+                />
+                {errors.fechaExpiracion && (
+                  <p className="text-xs text-red-400">{errors.fechaExpiracion}</p>
+                )}
               </div>
 
               {/* Bandera: Principal o Secundaria */}

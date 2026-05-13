@@ -74,7 +74,7 @@ router.post("/cards", verifyToken, async (req, res) => {
     const numeroEnmascarado = `****-****-****-${ultimos4}`;
 
     // Validar tipo de tarjeta
-    const tiposValidos = ["VISA", "Mastercard", "American Express", "Diners Club"];
+    const tiposValidos = ["VISA", "Mastercard", "American Express", "Diners Club", "Discover"];
     if (!tiposValidos.includes(tipoTarjeta)) {
       return res.status(400).json({ error: "Tipo de tarjeta no válido" });
     }
