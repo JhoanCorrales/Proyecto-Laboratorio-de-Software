@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { addCard } from "../services/walletService";
+import { AllCardLogos } from "../assets/cardLogos";
 
 // Funciones de validación de tarjetas
 const detectCardType = (cardNumber) => {
@@ -218,30 +219,6 @@ export default function AddPaymentMethod() {
               <p className="text-slate-400 mt-1">
                 Registra un nuevo método de pago para tu suscripción
               </p>
-              
-              {/* Iconos de tarjetas soportadas */}
-              <div className="flex gap-4 mt-4 pt-4 border-t border-neutral-border/30">
-                <div className="flex flex-col items-center gap-1">
-                  <span className="material-symbols-outlined text-2xl text-blue-500">credit_card</span>
-                  <span className="text-xs text-neutral-muted">Visa</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="material-symbols-outlined text-2xl text-red-500">credit_card</span>
-                  <span className="text-xs text-neutral-muted">Mastercard</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="material-symbols-outlined text-2xl text-blue-400">credit_card</span>
-                  <span className="text-xs text-neutral-muted">Amex</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="material-symbols-outlined text-2xl text-gray-500">credit_card</span>
-                  <span className="text-xs text-neutral-muted">Diners</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="material-symbols-outlined text-2xl text-orange-500">credit_card</span>
-                  <span className="text-xs text-neutral-muted">Discover</span>
-                </div>
-              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -349,6 +326,9 @@ export default function AddPaymentMethod() {
                   </label>
                 </div>
               </div>
+
+              {/* Tarjetas Aceptadas - Logos */}
+              <AllCardLogos />
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-6">

@@ -2,6 +2,25 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { getCards, deleteCard, setDefaultCard, getPurchases } from "../services/walletService";
+import {
+  VisaIconOnly,
+  MastercardIconOnly,
+  AmexIconOnly,
+  DinersIconOnly,
+  DiscoverIconOnly,
+} from "../assets/cardLogos";
+
+const getCardLogo = (tipotarjeta) => {
+  if (!tipotarjeta) return null;
+  const tipo = tipotarjeta.toLowerCase();
+  
+  if (tipo.includes("visa")) return <VisaIconOnly />;
+  if (tipo.includes("mastercard")) return <MastercardIconOnly />;
+  if (tipo.includes("amex") || tipo.includes("american express")) return <AmexIconOnly />;
+  if (tipo.includes("diners")) return <DinersIconOnly />;
+  if (tipo.includes("discover")) return <DiscoverIconOnly />;
+  return null;
+};
 
 export default function Wallet() {
   const navigate = useNavigate();
@@ -10,6 +29,13 @@ export default function Wallet() {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const cardsPerPage = 2;
+  const totalPages = Math.ceil(cards.length / cardsPerPage);
+  const startIndex = currentPage * cardsPerPage;
+  const endIndex = startIndex + cardsPerPage;
+  const currentCards = cards.slice(startIndex, endIndex);
 
   // Cargar tarjetas y compras al montar
   useEffect(() => {
@@ -255,61 +281,93 @@ export default function Wallet() {
                         </button>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {cards.map((card) => (
-                          <div
-                            key={card.id}
-                            className="bg-neutral-dark rounded-xl border border-neutral-border/30 p-6 relative overflow-hidden group hover:border-primary/50 transition-all"
-                          >
-                            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                              <span className="material-symbols-outlined text-4xl">
-                                credit_card
-                              </span>
-                            </div>
+                      <div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {currentCards.map((card) => (
+                            <div
+                              key={card.id}
+                              className="bg-neutral-dark rounded-xl border border-neutral-border/30 p-6 group hover:border-primary/50 transition-all flex flex-col"
+                            >
+                              <div className="mb-6 opacity-40 group-hover:opacity-60 transition-opacity flex justify-end">
+                                {getCardLogo(card.tipo_tarjeta)}
+                              </div>
 
-                            <div className="relative z-10">
-                              <p className="text-lg font-bold text-white mb-1">
-                                {card.tipo_tarjeta}
-                              </p>
-                              <p className="text-neutral-muted font-mono">
-                                •••• •••• •••• {card.ultimos_digitos}
-                              </p>
+                              <div>
+                                <p className="text-lg font-bold text-white mb-1">
+                                  {card.tipo_tarjeta}
+                                </p>
+                                <p className="text-neutral-muted font-mono">
+                                  •••• •••• •••• {card.ultimos_digitos}
+                                </p>
 
-                              <div className="mt-8 flex justify-between items-center">
-                                <span
-                                  className={`text-xs font-bold px-3 py-1 rounded ${
-                                    card.es_principal
-                                      ? "bg-primary/20 text-primary"
-                                      : "bg-neutral-accent/30 text-neutral-muted"
-                                  }`}
-                                >
-                                  {card.es_principal ? "PREFERIDA" : "SECUNDARIA"}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  {!card.es_principal && (
+                                <div className="mt-8 flex justify-between items-center">
+                                  <span
+                                    className={`text-xs font-bold px-3 py-1 rounded ${
+                                      card.es_principal
+                                        ? "bg-primary/20 text-primary"
+                                        : "bg-neutral-accent/30 text-neutral-muted"
+                                    }`}
+                                  >
+                                    {card.es_principal ? "PREFERIDA" : "SECUNDARIA"}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {!card.es_principal && (
+                                      <button
+                                        onClick={() => handleSetDefault(card.id)}
+                                        className="text-primary hover:text-primary/80 p-2 rounded-lg transition-colors active:scale-95"
+                                        title="Establecer como predeterminada"
+                                      >
+                                        <span className="material-symbols-outlined text-xl">
+                                          check_circle
+                                        </span>
+                                      </button>
+                                    )}
                                     <button
-                                      onClick={() => handleSetDefault(card.id)}
-                                      className="text-primary hover:text-primary/80 p-2 rounded-lg transition-colors active:scale-95"
-                                      title="Establecer como predeterminada"
+                                      onClick={() => handleDeleteCard(card.id)}
+                                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-lg transition-colors active:scale-95"
                                     >
                                       <span className="material-symbols-outlined text-xl">
-                                        check_circle
+                                        delete
                                       </span>
                                     </button>
-                                  )}
-                                  <button
-                                    onClick={() => handleDeleteCard(card.id)}
-                                    className="text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-lg transition-colors active:scale-95"
-                                  >
-                                    <span className="material-symbols-outlined text-xl">
-                                      delete
-                                    </span>
-                                  </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          ))}
+                        </div>
+
+                        {totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-4 mt-8">
+                            <button
+                              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                              disabled={currentPage === 0}
+                              className={`p-2 rounded-lg transition-all ${
+                                currentPage === 0
+                                  ? "text-neutral-muted/50 cursor-not-allowed"
+                                  : "text-primary hover:bg-primary/10 active:scale-95"
+                              }`}
+                              title="Página anterior"
+                            >
+                              <span className="material-symbols-outlined text-2xl">chevron_left</span>
+                            </button>
+                            <span className="text-sm text-neutral-muted">
+                              {currentPage + 1} / {totalPages}
+                            </span>
+                            <button
+                              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                              disabled={currentPage === totalPages - 1}
+                              className={`p-2 rounded-lg transition-all ${
+                                currentPage === totalPages - 1
+                                  ? "text-neutral-muted/50 cursor-not-allowed"
+                                  : "text-primary hover:bg-primary/10 active:scale-95"
+                              }`}
+                              title="Página siguiente"
+                            >
+                              <span className="material-symbols-outlined text-2xl">chevron_right</span>
+                            </button>
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </section>
