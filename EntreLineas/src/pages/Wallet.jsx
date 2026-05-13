@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { getCards, deleteCard, setDefaultCard, getPurchases } from "../services/walletService";
@@ -30,6 +30,7 @@ export default function Wallet() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+  const retryIntervalRef = useRef(null);
 
   const cardsPerPage = 2;
   const totalPages = Math.ceil(cards.length / cardsPerPage);
@@ -42,21 +43,42 @@ export default function Wallet() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError("");
         const [cardsData, purchasesData] = await Promise.all([
           getCards(),
           getPurchases(),
         ]);
         setCards(cardsData);
         setPurchases(purchasesData || []);
+        setError(""); // Limpiar error cuando la carga es exitosa
+        // Limpiar intervalo de reintentos si existe
+        if (retryIntervalRef.current) {
+          clearInterval(retryIntervalRef.current);
+          retryIntervalRef.current = null;
+        }
       } catch (err) {
-        setError(err.message || "Error al cargar datos");
         console.error(err);
+        const errorMessage = err.message || "Error al cargar datos";
+        setError(errorMessage);
+        
+        // Si hay error, configurar reintentos automáticos
+        if (!retryIntervalRef.current) {
+          retryIntervalRef.current = setInterval(() => {
+            fetchData();
+          }, 3000); // Reintentar cada 3 segundos
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+
+    // Limpiar intervalo al desmontar
+    return () => {
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current);
+        retryIntervalRef.current = null;
+      }
+    };
   }, []);
 
   const handleAddCard = () => {
@@ -89,7 +111,7 @@ export default function Wallet() {
   };
 
   return (
-    <div className="dark min-h-screen bg-background-dark text-slate-100">
+    <div className="dark min-h-screen bg-background-dark text-slate-100 overflow-x-hidden">
       <Navbar />
 
       <div className="pt-20 lg:pt-24 pb-12">
