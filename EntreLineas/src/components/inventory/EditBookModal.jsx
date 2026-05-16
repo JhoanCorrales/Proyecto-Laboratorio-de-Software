@@ -21,6 +21,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [categories, setCategories] = useState([]);
 
   // Cargar datos
   useEffect(() => {
@@ -48,6 +49,14 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
           cantidadInicial: itemInventory ? String(itemInventory.stock) : '0',
           portada_url: bookData.portada_url || '',
         });
+        
+        try {
+          const resCats = await fetch("http://localhost:4003/api/auth/categories");
+          if (resCats.ok) {
+            const catsData = await resCats.json();
+            setCategories(catsData);
+          }
+        } catch (e) {}
       } catch (err) {
         console.error("Error fetching book for edit", err);
         setError("Error cargando los detalles del libro");
@@ -199,7 +208,12 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
                   <label className="block text-sm font-semibold text-slate-100 mb-2">
                     Género / Categoría
                   </label>
-                  <input type="text" name="genero" value={formData.genero} onChange={handleChange} className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"/>
+                  <input type="text" list="category-suggestions" name="genero" value={formData.genero} onChange={handleChange} className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"/>
+                  <datalist id="category-suggestions">
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.nombre} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-100 mb-2">
