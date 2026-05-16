@@ -55,7 +55,7 @@ export default function StoreMap({ stores, tempMarker, onMapClick, onRemoveMarke
         {stores.map((store) => (
           <Marker
             key={store.id}
-            position={[store.latitud, store.longitud]}
+            position={[parseFloat(store.latitud), parseFloat(store.longitud)]}
             icon={storeIcon}
           >
             <Popup>

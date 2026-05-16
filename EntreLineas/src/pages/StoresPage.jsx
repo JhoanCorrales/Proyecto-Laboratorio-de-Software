@@ -2,32 +2,33 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import StoreMap from '../components/map/StoreMap';
 import StoreFormModal from '../components/map/StoreFormModal';
-
-const STORES_STORAGE_KEY = 'entrelineas_stores';
+import { getStores, createStore, deleteStore } from '../services/storesService';
 
 export default function StoresPage() {
   const [stores, setStores] = useState([]);
   const [tempMarker, setTempMarker] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  // Cargar tiendas del localStorage
+  // Cargar tiendas de la API
   useEffect(() => {
-    const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
-    if (savedStores) {
-      try {
-        setStores(JSON.parse(savedStores));
-      } catch (err) {
-        console.error('Error cargando tiendas:', err);
-      }
-    }
-    setLoading(false);
+    fetchStores();
   }, []);
 
-  // Guardar tiendas en localStorage
-  const saveStores = (updatedStores) => {
-    setStores(updatedStores);
-    localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(updatedStores));
+  const fetchStores = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await getStores();
+      setStores(data.stores || []);
+    } catch (err) {
+      console.error('Error cargando tiendas:', err);
+      setError('Error al cargar las tiendas');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMapClick = (latlng) => {
@@ -40,35 +41,49 @@ export default function StoresPage() {
     setShowForm(false);
   };
 
-  const handleCreateStore = (formData) => {
-    const newStore = {
-      id: Date.now(),
-      ...formData,
-      latitud: tempMarker.lat,
-      longitud: tempMarker.lng,
-      estado: 'activa',
-      created_at: new Date().toISOString(),
-    };
-
-    const updatedStores = [...stores, newStore];
-    saveStores(updatedStores);
-
-    setTempMarker(null);
-    setShowForm(false);
-  };
-
-  const handleDeleteStore = (storeId) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta tienda?')) {
-      const updatedStores = stores.filter((store) => store.id !== storeId);
-      saveStores(updatedStores);
+  const handleCreateStore = async (formData) => {
+    try {
+      setError('');
+      setSuccess('');
+      
+      // formData ya contiene latitud y longitud del marcador
+      await createStore(formData);
+      
+      setSuccess('Tienda creada exitosamente');
+      setTempMarker(null);
+      setShowForm(false);
+      
+      // Recargar tiendas
+      await fetchStores();
+      
+      // Limpiar mensaje de éxito después de 3 segundos
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error creando tienda:', err);
+      setError(err.message || 'Error al crear la tienda');
     }
   };
 
-  const handleEditStore = (storeId, updatedData) => {
-    const updatedStores = stores.map((store) =>
-      store.id === storeId ? { ...store, ...updatedData } : store
-    );
-    saveStores(updatedStores);
+  const handleDeleteStore = async (storeId) => {
+    if (confirm('¿Estás seguro de que deseas eliminar esta tienda?')) {
+      try {
+        setError('');
+        setSuccess('');
+        
+        await deleteStore(storeId);
+        
+        setSuccess('Tienda eliminada exitosamente');
+        
+        // Recargar tiendas
+        await fetchStores();
+        
+        // Limpiar mensaje de éxito después de 3 segundos
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err) {
+        console.error('Error eliminando tienda:', err);
+        setError(err.message || 'Error al eliminar la tienda');
+      }
+    }
   };
 
   if (loading) {
@@ -95,6 +110,31 @@ export default function StoresPage() {
 
       <div className="pt-20 lg:pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 h-screen flex flex-col">
+          {/* Mensajes de estado */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-900/30 border border-red-600/50 text-red-400 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined">error</span>
+                {error}
+              </div>
+              <button onClick={() => setError('')} className="text-red-400 hover:text-red-300">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          )}
+          
+          {success && (
+            <div className="mb-4 p-4 bg-green-900/30 border border-green-600/50 text-green-400 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined">check_circle</span>
+                {success}
+              </div>
+              <button onClick={() => setSuccess('')} className="text-green-400 hover:text-green-300">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-4xl font-bold text-slate-100 mb-2 flex items-center gap-3">
@@ -217,7 +257,7 @@ export default function StoresPage() {
                         </div>
 
                         <div className="text-xs text-neutral-muted mb-2 space-y-0.5">
-                          <p>📍 {store.latitud.toFixed(4)}, {store.longitud.toFixed(4)}</p>
+                          <p>📍 {parseFloat(store.latitud).toFixed(4)}, {parseFloat(store.longitud).toFixed(4)}</p>
                           {store.telefono && <p>📞 {store.telefono}</p>}
                         </div>
 
@@ -225,8 +265,8 @@ export default function StoresPage() {
                           <button
                             onClick={() => {
                               setTempMarker({
-                                lat: store.latitud,
-                                lng: store.longitud,
+                                lat: parseFloat(store.latitud),
+                                lng: parseFloat(store.longitud),
                               });
                               // Aquí podrías abrir un modal de edición
                             }}

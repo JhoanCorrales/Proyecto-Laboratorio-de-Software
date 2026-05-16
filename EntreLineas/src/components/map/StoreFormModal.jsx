@@ -11,7 +11,7 @@ export default function StoreFormModal({ isOpen, tempMarker, onSubmit, onClose }
     direccion: '',
     ciudad: 'Pereira',
     departamento: 'Risaralda',
-    codigo_postal: '',
+    codigo_postal: '660001',
     telefono: '',
     email: '',
     horario_atencion: '',
@@ -168,7 +168,7 @@ export default function StoreFormModal({ isOpen, tempMarker, onSubmit, onClose }
       direccion: '',
       ciudad: 'Pereira',
       departamento: 'Risaralda',
-      codigo_postal: '',
+      codigo_postal: '660001',
       telefono: '',
       email: '',
       horario_atencion: '',
@@ -349,35 +349,14 @@ export default function StoreFormModal({ isOpen, tempMarker, onSubmit, onClose }
               </div>
             </div>
 
-            {/* Código Postal */}
+            {/* Código Postal - Automático para Pereira */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-slate-100">
-                  Código Postal
-                </label>
-                {renderFieldIcon('codigo_postal')}
+              <label className="block text-sm font-semibold text-slate-100 mb-2">
+                Código Postal
+              </label>
+              <div className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 font-mono text-sm">
+                {formData.codigo_postal} <span className="text-neutral-muted text-xs ml-2">(Automático)</span>
               </div>
-              <input
-                type="text"
-                name="codigo_postal"
-                value={formData.codigo_postal}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`w-full bg-neutral-accent/50 border rounded-lg px-4 py-2 text-slate-100 placeholder:text-neutral-muted/70 outline-none focus:ring-2 transition-all ${
-                  getFieldStatus('codigo_postal') === 'error'
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
-                    : getFieldStatus('codigo_postal') === 'success'
-                    ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30'
-                    : 'border-neutral-border focus:border-primary focus:ring-primary/30'
-                }`}
-                placeholder="Ej: 660000"
-              />
-              {errors.codigo_postal && (
-                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  {errors.codigo_postal}
-                </p>
-              )}
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import db from "./db/index.js";
 import authRouter from "./routes/auth.js";
 import cartRouter from "./routes/cart.js";
 import walletRouter from "./routes/wallet.js";
+import storesRouter from "./routes/stores.js";
 
 dotenv.config();
 
@@ -73,6 +74,9 @@ app.use("/api/cart", cartRouter);
 
 // Wallet routes
 app.use("/api/wallet", walletRouter);
+
+// Stores routes
+app.use("/api/stores", storesRouter);
 
 // 404 handler
 app.use((req, res) => {
