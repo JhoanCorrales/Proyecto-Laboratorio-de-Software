@@ -321,7 +321,7 @@ function Navbar({ cartCount: cartCountProp }) {
                         <span className="material-symbols-outlined text-lg">edit</span>
                         Editar perfil
                       </button>
-                      {!isRoot && (
+                      {!isRoot && !isAdmin && (
                         <button
                           onClick={() => {
                             navigate("/wallet");

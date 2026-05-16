@@ -83,7 +83,7 @@ const router = createBrowserRouter([
   {
     path: "/wallet",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute excludeRoles={["Root", "Administrador"]}>
         <Wallet />
       </ProtectedRoute>
     ),

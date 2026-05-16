@@ -20,6 +20,7 @@ function EditProfile() {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const isRoot = user?.roles?.includes("Root");
+  const isAdmin = user?.roles?.includes("Administrador");
   
   const [personal, setPersonal] = useState(INITIAL_STATE);
   const [originalData, setOriginalData] = useState(INITIAL_STATE);
@@ -100,11 +101,11 @@ function EditProfile() {
         },
         body: JSON.stringify({
           nombre:        personal.nombre,
-          telefono:      personal.telefono,
-          direccion:     personal.direccion,
-          ciudad:        personal.ciudad,
-          departamento:  personal.departamento,
-          codigo_postal: personal.codigo_postal,
+          telefono:      (isRoot || isAdmin) ? "" : personal.telefono,
+          direccion:     (isRoot || isAdmin) ? "" : personal.direccion,
+          ciudad:        (isRoot || isAdmin) ? "" : personal.ciudad,
+          departamento:  (isRoot || isAdmin) ? "" : personal.departamento,
+          codigo_postal: (isRoot || isAdmin) ? "" : personal.codigo_postal,
         }),
       });
 
@@ -173,12 +174,13 @@ function EditProfile() {
                 onChange={handleChange}
                 onLogout={handleLogout}
                 isRoot={isRoot}
+                isAdmin={isAdmin}
               />
 
               {/* Columna derecha: seguridad + envío — comparten el mismo estado */}
               <div className="flex-1 p-8 flex flex-col gap-10">
                 <SecuritySection />
-                {!isRoot && <ShippingSection data={personal} onChange={handleChange} />}
+                {!isRoot && !isAdmin && <ShippingSection data={personal} onChange={handleChange} />}
               </div>
             </div>
 

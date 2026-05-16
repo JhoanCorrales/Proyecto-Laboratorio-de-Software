@@ -3,7 +3,7 @@ import FormField from "./FormField";
 
 const AVATAR_URL = "https://lh3.googleusercontent.com/aida-public/AB6AXuCyuttLtyJ3ZiAGQe3YsMQEfrQamkactX_VFNZDSGheYVy-NvI9whj5QTDSRwzh0GpXOlhyfM9clzdJHoMnN4sPKZH4vNWKEx9bB8haydlyRPOme71SuqhR9pdXXQApuuf7Un_aVthTvmaXtGq4IQohhljptdGKVqKNxy5qksudDLlrq_PnkLOX_v0zOdv6ap3InYZBF2uYvt5sexdTDvXZEIzV51oPUxPO3oo1WTt1tBM_wFZeh33NptXva3wkgiHiUbWLOkJrEdk";
 
-function PersonalInfoSection({ data, onChange, onLogout, isRoot = false }) {
+function PersonalInfoSection({ data, onChange, onLogout, isRoot = false, isAdmin = false }) {
   return (
     <div className="flex-1 p-8 border-r border-neutral-border/30">
       <div className="flex justify-between items-center mb-4">
@@ -32,7 +32,7 @@ function PersonalInfoSection({ data, onChange, onLogout, isRoot = false }) {
           value={data.email || ""}
           readOnly
         />
-        {!isRoot && (
+        {!isRoot && !isAdmin && (
           <>
             <FormField
               label="Número de teléfono"

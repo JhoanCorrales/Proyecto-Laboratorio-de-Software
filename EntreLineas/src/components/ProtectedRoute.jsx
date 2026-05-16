@@ -8,8 +8,12 @@ import { Navigate } from "react-router-dom";
  * <ProtectedRoute requiredRole="Root">
  *   <RoleManagement />
  * </ProtectedRoute>
+ * 
+ * <ProtectedRoute excludeRoles={["Root", "Administrador"]}>
+ *   <Wallet />
+ * </ProtectedRoute>
  */
-function ProtectedRoute({ children, requiredRole }) {
+function ProtectedRoute({ children, requiredRole, excludeRoles = [] }) {
   const token = localStorage.getItem("token");
   
   // Si no hay token, redirigir a login
@@ -24,6 +28,11 @@ function ProtectedRoute({ children, requiredRole }) {
 
     // Si se requiere un rol específico y el usuario no lo tiene, redirigir a home
     if (requiredRole && !roles.includes(requiredRole)) {
+      return <Navigate to="/home" replace />;
+    }
+
+    // Si hay roles excluidos y el usuario tiene alguno, redirigir a home
+    if (excludeRoles.length > 0 && roles.some(role => excludeRoles.includes(role))) {
       return <Navigate to="/home" replace />;
     }
 
