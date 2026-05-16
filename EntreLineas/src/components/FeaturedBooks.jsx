@@ -3,23 +3,53 @@ import BookCard from "./BookCard";
 
 const USD_TO_COP = 4000;
 
-function generateRandomPrice(title = "") {
-  const hash = title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const base = (hash % 50) + 15;
-  return Math.round(base * USD_TO_COP);
+async function getDynamicCover(item, retries = 3, usePublisher = true) {
+  try {
+    const titleQuery = encodeURIComponent(item.titulo || '');
+    let url = `https://openlibrary.org/search.json?title=${titleQuery}&limit=1&fields=cover_i`;
+    
+    if (usePublisher && item.editorial) {
+      url += `&publisher=${encodeURIComponent(item.editorial)}`;
+    }
+    
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (data.docs && data.docs.length > 0 && data.docs[0].cover_i) {
+      return `https://covers.openlibrary.org/b/id/${data.docs[0].cover_i}-M.jpg`;
+    }
+    
+    if (usePublisher && item.editorial) {
+      // Reintentar sin editorial si no encuentra portadas o resultados
+      return getDynamicCover(item, retries, false);
+    }
+    
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return getDynamicCover(item, retries - 1, false);
+    }
+    
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 1500));
+      return getDynamicCover(item, retries - 1, usePublisher);
+    }
+    console.warn("No se pudo cargar la portada dinámicamente", err);
+  }
+  return item.portada_url || "https://covers.openlibrary.org/b/id/default-M.jpg";
 }
 
-function parseBook(item) {
-  if (!item.cover_i) return null;
-  const priceRaw = generateRandomPrice(item.title);
+async function parseBook(item) {
+  const priceRaw = Number(item.priceRaw || 0);
+  const imgUrl = await getDynamicCover(item);
   return {
-    id: item.key ?? item.title,
-    title: item.title ?? "Sin título",
-    author: item.author_name?.[0] ?? "Autor desconocido",
+    id: item.id,
+    title: item.titulo ?? "Sin título",
+    author: item.autor ?? "Autor desconocido",
     price: `$${priceRaw.toLocaleString("es-CO")}`,
     priceRaw: priceRaw,
-    img: `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`,
-    agotado: false,
+    img: imgUrl,
+    agotado: item.estado === 'agotado' || Number(item.stock_general) === 0,
   };
 }
 
@@ -30,14 +60,13 @@ function FeaturedBooks({ onAuthRequired }) {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const res = await fetch(
-          "https://openlibrary.org/search.json?q=bestseller&limit=20&fields=key,title,author_name,cover_i"
-        );
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4003';
+        const res = await fetch(`${baseUrl}/api/books/public?limit=5`);
         const data = await res.json();
-        const parsed = (data.docs ?? [])
-          .map(parseBook)
-          .filter(Boolean)
-          .slice(0, 5);
+        
+        const parsedBooks = await Promise.all((data.docs ?? []).map(parseBook));
+        const parsed = parsedBooks.filter(Boolean);
+        
         setBooks(parsed);
       } catch (err) {
         console.error("Error cargando libros destacados:", err);

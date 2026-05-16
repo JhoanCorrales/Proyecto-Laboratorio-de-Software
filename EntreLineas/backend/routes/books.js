@@ -121,6 +121,73 @@ router.get("/search", async (req, res) => {
 });
 
 /**
+ * GET /api/books/public
+ * Get all books that exist in at least one store inventory
+ * Supports pagination, search, logic
+ */
+router.get("/public", async (req, res) => {
+  try {
+    const { page = 1, limit = 20, q = "", cat = "" } = req.query;
+    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const limitNum = parseInt(limit);
+
+    let conditions = ["1=1"];
+    let values = [];
+
+    if (q.trim()) {
+      values.push(`%${q}%`);
+      conditions.push(`(LOWER(l.titulo) LIKE LOWER($${values.length}) OR LOWER(l.autor) LIKE LOWER($${values.length}))`);
+    }
+
+    if (cat.trim() && cat !== "fiction") {
+      values.push(cat);
+      conditions.push(`LOWER(c.nombre) = LOWER($${values.length})`);
+    }
+
+    conditions.push(`EXISTS (SELECT 1 FROM inventario_tienda it WHERE it.libro_id = l.id)`);
+
+    const whereClause = conditions.join(" AND ");
+
+    const countQuery = `
+      SELECT COUNT(DISTINCT l.id) as total
+      FROM libros l
+      LEFT JOIN categorias c ON l.categoria_id = c.id
+      WHERE ${whereClause}
+    `;
+
+    values.push(limitNum);
+    const limitIdx = values.length;
+    values.push(offset);
+    const offsetIdx = values.length;
+
+    const dataQuery = `
+      SELECT l.id, l.titulo, l.autor, l.año, l.genero, l.numero_paginas as paginas, 
+             l.editorial, l.isbn, l.idioma, l.fecha_publicacion, l.precio as "priceRaw", 
+             l.portada_url, l.estado, l.stock_general, c.nombre as categoria_nombre
+      FROM libros l
+      LEFT JOIN categorias c ON l.categoria_id = c.id
+      WHERE ${whereClause}
+      ORDER BY l.titulo ASC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `;
+
+    const countResult = await db.query(countQuery, values.slice(0, values.length - 2));
+    const dataResult = await db.query(dataQuery, values);
+
+    res.status(200).json({
+      success: true,
+      docs: dataResult.rows,
+      total: parseInt(countResult.rows[0].total),
+      page: parseInt(page),
+      limit: limitNum
+    });
+  } catch (err) {
+    console.error("Error fetching public books:", err);
+    res.status(500).json({ success: false, message: "Error fetching public books", error: err.message });
+  }
+});
+
+/**
  * GET /api/books/:id
  * Get specific book by ID
  */
