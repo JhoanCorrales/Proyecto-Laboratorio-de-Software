@@ -13,13 +13,15 @@ function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
-    // Si el usuario es Root, redirigir a role-management
+    // Redirigir según rol
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         if (payload.roles && payload.roles.includes("Root")) {
           navigate("/role-management", { replace: true });
+        } else if (payload.roles && payload.roles.includes("Administrador")) {
+          navigate("/stores", { replace: true });
         }
       } catch {
         // Token inválido, permitir que se muestre la página

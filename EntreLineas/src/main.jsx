@@ -90,7 +90,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/stores",
-    element: <StoresPage />,
+    element: (
+      <ProtectedRoute requiredRole="Administrador">
+        <StoresPage />
+      </ProtectedRoute>
+    ),
   }
 ]);
 

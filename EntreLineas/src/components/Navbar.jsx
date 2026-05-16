@@ -43,6 +43,7 @@ function Navbar({ cartCount: cartCountProp }) {
   const [soloDisponibles, setSoloDisponibles] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [isRoot, setIsRoot] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -61,8 +62,10 @@ function Navbar({ cartCount: cartCountProp }) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setIsRoot(payload.roles?.includes("Root"));
+        setIsAdmin(payload.roles?.includes("Administrador"));
       } catch {
         setIsRoot(false);
+        setIsAdmin(false);
       }
     }
     // Obtener el usuario actual
@@ -158,11 +161,11 @@ function Navbar({ cartCount: cartCountProp }) {
         
         {/* Logo y Enlaces */}
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 text-primary" onClick={() => navigate(isRoot ? "/role-management" : "/home")}>
+          <div className="flex items-center gap-3 text-primary" onClick={() => navigate(isRoot ? "/role-management" : isAdmin ? "/stores" : "/home")}>
             <span className="material-symbols-outlined text-3xl shrink-0">menu_book</span>
             <h1 className="text-xl font-bold tracking-tight text-white">Entre Líneas</h1>
           </div>
-          {!isRoot && (
+          {!isRoot && !isAdmin && (
             <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
               <button onClick={() => navigate("/home")} className="hover:text-primary transition-colors">Inicio</button>
               <button onClick={() => navigate("/catalogue")} className="hover:text-primary transition-colors">Catálogo</button>
@@ -171,7 +174,7 @@ function Navbar({ cartCount: cartCountProp }) {
         </div>
 
         {/* Buscador y Filtros */}
-        {!isRoot && (
+        {!isRoot && !isAdmin && (
           <div className="flex-1 max-w-xl hidden lg:flex items-stretch relative" ref={panelRef}>
             <form onSubmit={handleSearch} className="flex w-full">
               {/* Botón TUNE (Filtros) */}
@@ -261,7 +264,12 @@ function Navbar({ cartCount: cartCountProp }) {
               <span className="material-symbols-outlined">admin_panel_settings</span>
             </button>
           )}
-          {!isRoot && (
+          {isAdmin && (
+            <button onClick={() => navigate("/stores")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary" title="Gestionar tiendas">
+              <span className="material-symbols-outlined">store</span>
+            </button>
+          )}
+          {!isRoot && !isAdmin && (
             <button 
               onClick={() => {
                 const currentUser = getCurrentUser();

@@ -29,6 +29,8 @@ export default function Login() {
       // Redirigir según rol
       if (user.roles && user.roles.includes("Root")) {
         navigate("/role-management");
+      } else if (user.roles && user.roles.includes("Administrador")) {
+        navigate("/stores");
       } else {
         navigate("/home");
       }
