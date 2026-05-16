@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StoreMap from '../components/map/StoreMap';
@@ -13,23 +13,37 @@ export default function StoresPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const isMounted = useRef(true);
 
   // Cargar tiendas de la API
   useEffect(() => {
+    isMounted.current = true;
     fetchStores();
+    return () => { isMounted.current = false; };
   }, []);
 
-  const fetchStores = async () => {
+  const fetchStores = async (isRetry = false) => {
     try {
-      setLoading(true);
-      setError('');
+      if (!isRetry) setLoading(true);
       const data = await getStores();
-      setStores(data.stores || []);
+      if (isMounted.current) {
+        setStores(data.stores || []);
+        setError(''); // Limpiamos el error si fue exitoso
+        if (isRetry) setLoading(false);
+      }
     } catch (err) {
       console.error('Error cargando tiendas:', err);
-      setError('Error al cargar las tiendas');
+      if (isMounted.current) {
+        setError('Error al cargar las tiendas. Reintentando automáticamente en breve...');
+        // Auto-refresh: volver a cargar si falla usualmente por 500 error
+        setTimeout(() => {
+          if (isMounted.current) fetchStores(true);
+        }, 5000);
+      }
     } finally {
-      setLoading(false);
+      if (!isRetry && isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 
