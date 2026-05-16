@@ -335,10 +335,14 @@ function BookDetail() {
 
               {/* Columna derecha */}
               <div className="md:col-span-7 flex flex-col">
-                <div className="hidden md:block mb-2">
-                  <span className="text-primary font-medium tracking-wide uppercase text-sm">
-                    {doc.categoria_nombre ?? "Literatura"}
-                  </span>
+                <div className="hidden md:flex flex-wrap gap-2 mb-2">
+                  {(doc.genero || doc.categoria_nombre || "Literatura").split(',').map((cat, idx) => (
+                    <span key={idx} className="bg-primary/10 text-primary font-bold tracking-wide uppercase text-xs px-2.5 py-1 rounded-sm">
+                      {cat.trim()}
+                    </span>
+                  ))}
+                </div>
+                <div>
                   <h1 className="text-4xl lg:text-5xl font-extrabold mt-1 text-slate-900 dark:text-white">
                     {doc.titulo ?? doc.title}
                   </h1>
@@ -394,7 +398,7 @@ function BookDetail() {
                   <div className="grid grid-cols-2 gap-y-4 py-6 border-y border-slate-200 dark:border-neutral-border">
                     {[
                       ["Editorial", doc.editorial ?? "No disponible"],
-                      ["Género", doc.categoria_nombre ?? "No disponible"],
+                      ["Género", doc.genero || doc.categoria_nombre || "No disponible"],
                       ["ISBN", doc.isbn ?? "No disponible"],
                       ["Idioma", language],
                     ].map(([label, value]) => (
