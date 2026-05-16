@@ -24,7 +24,13 @@ export default function StoreInventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [retryCount, setRetryCount] = useState(0);
   const itemsPerPage = 5;
+
+  const retryLoad = () => {
+    setError('');
+    setRetryCount(c => c + 1);
+  };
 
   // Cargar tienda
   useEffect(() => {
@@ -38,6 +44,7 @@ export default function StoreInventoryPage() {
           return;
         }
         setStore(foundStore);
+        setError('');
       } catch (err) {
         console.error('Error cargando tienda:', err);
         setError('Error al cargar la tienda');
@@ -47,7 +54,7 @@ export default function StoreInventoryPage() {
     };
 
     fetchStore();
-  }, [storeId]);
+  }, [storeId, retryCount]);
 
   // Cargar inventario de la tienda
   useEffect(() => {
@@ -72,6 +79,7 @@ export default function StoreInventoryPage() {
         }));
         
         setBooks(formattedBooks);
+        setError('');
       } catch (err) {
         console.error('Error cargando inventario:', err);
         setError('Error al cargar el inventario');
@@ -81,7 +89,7 @@ export default function StoreInventoryPage() {
     };
 
     fetchInventory();
-  }, [store]);
+  }, [store, retryCount]);
 
   // Filtrar libros
   const filteredBooks = books.filter(book => {
@@ -213,12 +221,21 @@ export default function StoreInventoryPage() {
               error
             </span>
             <p className="mt-4 text-red-400">{error || 'Tienda no encontrada'}</p>
-            <button
-              onClick={() => navigate('/stores')}
-              className="mt-4 px-4 py-2 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90"
-            >
-              Volver a Tiendas
-            </button>
+            <div className="flex gap-3 mt-4 justify-center">
+              <button
+                onClick={retryLoad}
+                className="px-4 py-2 bg-primary text-background-dark font-bold rounded-lg hover:bg-primary/90 flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">refresh</span>
+                Reintentar
+              </button>
+              <button
+                onClick={() => navigate('/stores')}
+                className="px-4 py-2 bg-neutral-accent text-slate-100 font-bold rounded-lg hover:bg-neutral-accent/80"
+              >
+                Volver a Tiendas
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -265,7 +282,14 @@ export default function StoreInventoryPage() {
           {error && (
             <div className="mb-4 p-4 bg-red-900/30 border border-red-600/50 text-red-400 rounded-lg flex items-center gap-2">
               <span className="material-symbols-outlined">error</span>
-              {error}
+              <span className="flex-1">{error}</span>
+              <button
+                onClick={retryLoad}
+                className="ml-auto flex items-center gap-1 text-sm font-bold px-3 py-1 bg-red-600/20 hover:bg-red-600/40 rounded-lg transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">refresh</span>
+                Reintentar
+              </button>
             </div>
           )}
 
