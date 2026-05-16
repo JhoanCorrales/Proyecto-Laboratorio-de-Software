@@ -188,6 +188,28 @@ router.get("/public", async (req, res) => {
 });
 
 /**
+ * GET /api/books/:id/stores
+ * Get all stores that have the specific book ID in their inventory
+ */
+router.get("/:id/stores", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `
+      SELECT t.id, t.nombre, t.ciudad, it.cantidad_disponible as stock
+      FROM inventario_tienda it
+      JOIN tiendas t ON it.tienda_id = t.id
+      WHERE it.libro_id = $1 AND it.cantidad_disponible > 0
+      ORDER BY t.ciudad ASC, t.nombre ASC
+    `;
+    const result = await db.query(query, [id]);
+    res.status(200).json({ success: true, stores: result.rows });
+  } catch (err) {
+    console.error("Error fetching book stores:", err);
+    res.status(500).json({ success: false, message: "Error fetching book stores", error: err.message });
+  }
+});
+
+/**
  * GET /api/books/:id
  * Get specific book by ID
  */
@@ -196,7 +218,7 @@ router.get("/:id", async (req, res) => {
     const { id } = req.params;
 
     const result = await db.query(
-      "SELECT id, titulo, autor, año, genero, numero_paginas as paginas, editorial, isbn, idioma, fecha_publicacion, precio FROM libros WHERE id = $1",
+      "SELECT l.id, l.titulo, l.autor, l.año, l.genero, l.numero_paginas as paginas, l.editorial, l.isbn, l.idioma, l.fecha_publicacion, l.precio, l.portada_url, l.stock_general, c.nombre as categoria_nombre FROM libros l LEFT JOIN categorias c ON l.categoria_id = c.id WHERE l.id = $1",
       [id]
     );
 

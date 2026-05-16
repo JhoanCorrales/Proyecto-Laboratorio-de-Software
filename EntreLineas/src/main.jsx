@@ -50,7 +50,7 @@ const router = createBrowserRouter([
     element: <Catalogue />,
   },
   {
-    path: "/catalogue/:bookTitle/details",
+    path: "/catalogue/book/:bookId",
     element: <BookDetail />,
   },
   {

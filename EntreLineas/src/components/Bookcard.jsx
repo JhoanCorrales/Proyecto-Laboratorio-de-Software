@@ -3,15 +3,13 @@ import { useState } from "react";
 import { addToCart } from "../services/cartService";
 import { getCurrentUser } from "../services/authService";
 
-function BookCard({ title, author, price, priceRaw, img, agotado = false, isbn, onAuthRequired }) {
+function BookCard({ id, title, author, price, priceRaw, img, agotado = false, isbn, onAuthRequired }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [feedback, setFeedback] = useState(null); // "ok" | "err"
 
   const handleClick = () => {
-    navigate(`/catalogue/${encodeURIComponent(title)}/details`, {
-      state: { bookPrice: priceRaw, bookImg: img }
-    });
+    navigate(`/catalogue/book/${id}`);
   };
 
   const handleAddToCart = async (e) => {
