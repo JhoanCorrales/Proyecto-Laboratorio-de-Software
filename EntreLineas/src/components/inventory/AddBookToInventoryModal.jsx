@@ -25,8 +25,23 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [selectedGenres, setSelectedGenres] = useState(new Set());
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
+
+  useEffect(() => {
+    const loadCats = async () => {
+      try {
+        const res = await fetch("http://localhost:4003/api/auth/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (e) {}
+    }
+    loadCats();
+  }, []);
 
   // Buscar libros mientras el usuario escribe
   const handleTituloChange = async (e) => {
@@ -85,7 +100,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
       titulo: book.titulo,
       autor: book.autor || '',
       año: book.año || '',
-      genero: book.genero || '',
+      genero: '',
       paginas: book.paginas || '',
       editorial: book.editorial || '',
       isbn: book.isbn || '',
@@ -143,7 +158,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
         paginas: formData.paginas,
         idioma: formData.idioma,
         año: formData.año,
-        genero: formData.genero,
+        genero: Array.from(selectedGenres).join(', '),
         precio: parseFloat(formData.precioUnitarioPesos),
         portada_url: formData.portada_url,
       });
@@ -178,6 +193,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
           cantidadInicial: '1',
           portada_url: '',
         });
+        setSelectedGenres(new Set());
         setError('');
         setSuccess('');
         onClose();
@@ -306,8 +322,8 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
                   <span className="text-slate-100 ml-2">{formData.autor || 'N/A'}</span>
                 </div>
                 <div className="text-sm">
-                  <span className="text-neutral-muted">Género:</span>
-                  <span className="text-slate-100 ml-2">{formData.genero || 'N/A'}</span>
+                  <span className="text-neutral-muted">Género O.L.:</span>
+                  <span className="text-slate-100 ml-2">{formData.openLibraryKey ? "Sugerido autollenar o verificar" : 'N/A'}</span>
                 </div>
                 <div className="text-sm">
                   <span className="text-neutral-muted">Editorial:</span>
@@ -321,10 +337,45 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
             )}
           </div>
 
-          {/* Sección: Detalles de Inventario */}
+        {/* Sección: Detalles de Inventario */}
           {(formData.openLibraryKey || formData.autor) && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-lg">local_offer</span>
+                Clasificación del Libro
+              </h3>
+
+              <div className="bg-neutral-accent/30 border border-neutral-border/30 rounded-lg p-4">
+                <label className="block text-sm font-semibold text-slate-100 mb-2">
+                  Géneros / Categorías Locales <span className="text-red-400">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-40 overflow-y-auto custom-scrollbar p-1">
+                  {categories.map(cat => (
+                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={selectedGenres.has(cat.nombre)}
+                        onChange={() => {
+                          const newSet = new Set(selectedGenres);
+                          if (newSet.has(cat.nombre)) {
+                            newSet.delete(cat.nombre);
+                          } else {
+                            newSet.add(cat.nombre);
+                          }
+                          setSelectedGenres(newSet);
+                        }}
+                      />
+                      <div className={`size-4 rounded-sm border flex items-center justify-center transition-colors ${selectedGenres.has(cat.nombre) ? 'bg-primary border-primary' : 'border-neutral-border group-hover:border-primary/50'}`}>
+                        {selectedGenres.has(cat.nombre) && <span className="material-symbols-outlined text-background-dark text-[10px] font-bold">check</span>}
+                      </div>
+                      <span className="text-sm text-slate-300 group-hover:text-white transition-colors select-none">{cat.nombre}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2 mt-4">
                 <span className="material-symbols-outlined text-primary text-lg">inventory_2</span>
                 Detalles de Inventario
               </h3>

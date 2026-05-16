@@ -22,6 +22,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState([]);
+  const [selectedGenres, setSelectedGenres] = useState(new Set());
 
   // Cargar datos
   useEffect(() => {
@@ -45,10 +46,13 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
           isbn: bookData.isbn || '',
           idioma: bookData.idioma || '',
           fechaPublicacion: bookData.fecha_publicacion ? bookData.fecha_publicacion.split('T')[0] : '',
-          precioUnitarioPesos: bookData.precio ? String(bookData.precio) : '',
           cantidadInicial: itemInventory ? String(itemInventory.stock) : '0',
           portada_url: bookData.portada_url || '',
         });
+        
+        if (bookData.genero) {
+          setSelectedGenres(new Set(bookData.genero.split(',').map(s => s.trim())));
+        }
         
         try {
           const resCats = await fetch("http://localhost:4003/api/auth/categories");
@@ -114,7 +118,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
         paginas: formData.paginas,
         idioma: formData.idioma,
         año: formData.año,
-        genero: formData.genero,
+        genero: Array.from(selectedGenres).join(', '),
         precio: parseFloat(formData.precioUnitarioPesos),
         portada_url: formData.portada_url,
       });
@@ -204,16 +208,34 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
                   </label>
                   <input type="text" name="editorial" value={formData.editorial} onChange={handleChange} className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"/>
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-100 mb-2">
-                    Género / Categoría
+                    Géneros / Categorías
                   </label>
-                  <input type="text" list="category-suggestions" name="genero" value={formData.genero} onChange={handleChange} className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"/>
-                  <datalist id="category-suggestions">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto custom-scrollbar p-3 bg-neutral-accent/50 border border-neutral-border rounded-lg">
                     {categories.map(cat => (
-                      <option key={cat.id} value={cat.nombre} />
+                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          className="hidden"
+                          checked={selectedGenres.has(cat.nombre)}
+                          onChange={() => {
+                            const newSet = new Set(selectedGenres);
+                            if (newSet.has(cat.nombre)) {
+                              newSet.delete(cat.nombre);
+                            } else {
+                              newSet.add(cat.nombre);
+                            }
+                            setSelectedGenres(newSet);
+                          }}
+                        />
+                        <div className={`size-4 rounded-sm border flex items-center justify-center transition-colors ${selectedGenres.has(cat.nombre) ? 'bg-primary border-primary' : 'border-neutral-border group-hover:border-primary/50'}`}>
+                          {selectedGenres.has(cat.nombre) && <span className="material-symbols-outlined text-background-dark text-[10px] font-bold">check</span>}
+                        </div>
+                        <span className="text-sm text-slate-300 group-hover:text-white transition-colors select-none">{cat.nombre}</span>
+                      </label>
                     ))}
-                  </datalist>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-100 mb-2">

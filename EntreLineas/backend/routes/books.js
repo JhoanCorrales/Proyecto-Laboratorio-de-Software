@@ -140,8 +140,8 @@ router.get("/public", async (req, res) => {
     }
 
     if (cat.trim()) {
-      values.push(cat);
-      conditions.push(`LOWER(c.nombre) = LOWER($${values.length})`);
+      values.push(`%${cat}%`);
+      conditions.push(`(LOWER(l.genero) LIKE LOWER($${values.length}) OR LOWER(c.nombre) = LOWER($${values.length}))`);
     }
 
     conditions.push(`EXISTS (SELECT 1 FROM inventario_tienda it WHERE it.libro_id = l.id)`);
