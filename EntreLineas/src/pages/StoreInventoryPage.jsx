@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getStores } from '../services/storesService';
+import AddBookToInventoryModal from '../components/inventory/AddBookToInventoryModal';
 
 export default function StoreInventoryPage() {
   const { storeId } = useParams();
@@ -12,6 +13,7 @@ export default function StoreInventoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showAddBookModal, setShowAddBookModal] = useState(false);
 
   // Búsqueda y filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,6 +108,23 @@ export default function StoreInventoryPage() {
     }
   };
 
+  const handleBookAdded = (newBook) => {
+    const codigo = `LIB-${Math.floor(Math.random() * 10000)}`;
+    const estado = newBook.stock >= 10 ? 'disponible' : newBook.stock > 0 ? 'bajo' : 'agotado';
+    const bookWithId = {
+      id: Math.max(...books.map(b => b.id), 0) + 1,
+      codigo,
+      titulo: newBook.titulo,
+      autor: newBook.autor,
+      categoria: newBook.genero,
+      stock: newBook.stock || 0,
+      estado,
+    };
+    setBooks(prev => [bookWithId, ...prev]);
+    setSuccess(`¡${newBook.titulo} agregado al inventario!`);
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background-dark text-slate-100">
@@ -165,12 +184,21 @@ export default function StoreInventoryPage() {
             <span className="text-slate-100 font-semibold">{store.nombre}</span>
           </div>
 
-          {/* Título */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-slate-100 mb-1">Gestionar Existencias</h1>
-            <p className="text-neutral-muted text-sm">
-              Control de inventario de <span className="text-primary">{store.nombre}</span> en tiempo real.
-            </p>
+          {/* Título y botón */}
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-100 mb-1">Gestionar Existencias</h1>
+              <p className="text-neutral-muted text-sm">
+                Control de inventario de <span className="text-primary">{store.nombre}</span> en tiempo real.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAddBookModal(true)}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-background-dark px-4 py-2 rounded-lg font-bold transition-colors"
+            >
+              <span className="material-symbols-outlined">add_circle</span>
+              Agregar Libro
+            </button>
           </div>
 
           {/* Mensajes */}
@@ -378,6 +406,13 @@ export default function StoreInventoryPage() {
           </div>
         </div>
       </div>
+
+      <AddBookToInventoryModal
+        isOpen={showAddBookModal}
+        onClose={() => setShowAddBookModal(false)}
+        storeId={storeId}
+        onBookAdded={handleBookAdded}
+      />
     </div>
   );
 }
