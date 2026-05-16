@@ -5,6 +5,28 @@ import { verifyToken, requireRole } from "../middleware/auth.js";
 const router = Router();
 
 /**
+ * Función auxiliar para actualizar el stock global de un libro
+ * Suma el stock de todas las tiendas y actualiza la columna stock_general en la tabla libros.
+ */
+async function updateGlobalStock(libroId) {
+  try {
+    await db.query(`
+      UPDATE libros 
+      SET 
+        stock_general = COALESCE((SELECT SUM(cantidad_disponible) FROM inventario_tienda WHERE libro_id = $1), 0),
+        estado = CASE 
+                   WHEN COALESCE((SELECT SUM(cantidad_disponible) FROM inventario_tienda WHERE libro_id = $1), 0) > 0 THEN 'disponible' 
+                   ELSE 'agotado' 
+                 END,
+        updated_at = NOW()
+      WHERE id = $1
+    `, [libroId]);
+  } catch (error) {
+    console.error("Error al actualizar el stock global del libro:", error);
+  }
+}
+
+/**
  * GET /api/stores
  * Obtiene todas las tiendas (público)
  */
@@ -326,6 +348,9 @@ router.post("/:storeId/inventory", verifyToken, requireRole("Administrador"), as
       );
     }
 
+    // Actualizar stock global del libro en base de datos central
+    await updateGlobalStock(libro_id);
+
     // Obtener datos completos del libro para respuesta
     const fullData = await db.query(`
       SELECT 
@@ -395,6 +420,9 @@ router.put("/:storeId/inventory/:libroId", verifyToken, requireRole("Administrad
        RETURNING *`,
       [cantidad_disponible, cantidad_minima, cantidad_maxima, storeId, libroId]
     );
+
+    // Actualizar stock global del libro
+    await updateGlobalStock(libroId);
 
     res.status(200).json({
       success: true,
