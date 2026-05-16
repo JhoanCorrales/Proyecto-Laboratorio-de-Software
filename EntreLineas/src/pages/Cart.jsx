@@ -7,6 +7,77 @@ import { getCurrentUser } from "../services/authService";
 
 const IVA = 0.19;
 
+// ─── Dynamic cover loader (same resilient logic as BookDetail) ────────────────
+async function getDynamicCover(titulo, editorial, retries = 3, usePublisher = true) {
+  try {
+    let url = `https://openlibrary.org/search.json?title=${encodeURIComponent(titulo || '')}&limit=1&fields=cover_i`;
+    if (usePublisher && editorial) url += `&publisher=${encodeURIComponent(editorial)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.docs?.length && data.docs[0].cover_i) {
+      return `https://covers.openlibrary.org/b/id/${data.docs[0].cover_i}-M.jpg`;
+    }
+    if (usePublisher && editorial) return getDynamicCover(titulo, editorial, retries, false);
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return getDynamicCover(titulo, editorial, retries - 1, false);
+    }
+  } catch {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 1500));
+      return getDynamicCover(titulo, editorial, retries - 1, usePublisher);
+    }
+  }
+  return null;
+}
+
+// ─── Cover component: shows stored URL, fetches dynamically if missing ─────────
+function CartItemCover({ titulo, editorial, portada_url }) {
+  const [src, setSrc] = useState(portada_url || null);
+  const [loaded, setLoaded] = useState(!!portada_url);
+
+  useEffect(() => {
+    if (portada_url) {
+      setSrc(portada_url);
+      setLoaded(true);
+      return;
+    }
+    // No stored URL — fetch dynamically
+    let cancelled = false;
+    getDynamicCover(titulo, editorial).then(url => {
+      if (!cancelled && url) {
+        setSrc(url);
+        setLoaded(true);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [titulo, editorial, portada_url]);
+
+  if (!src || !loaded) {
+    return (
+      <div className="w-full h-full flex items-center justify-center animate-pulse bg-neutral-border/20">
+        <span className="material-symbols-outlined text-3xl text-neutral-muted">menu_book</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={titulo}
+      className="w-full h-full object-cover"
+      onError={() => {
+        // Stored URL is broken — try fetching dynamically
+        setLoaded(false);
+        setSrc(null);
+        getDynamicCover(titulo, editorial).then(url => {
+          if (url) { setSrc(url); setLoaded(true); }
+        });
+      }}
+    />
+  );
+}
+
 // ─── Skeleton loading ─────────────────────────────────────────────────────────
 function SkeletonItem() {
   return (
@@ -209,19 +280,11 @@ function Cart() {
                       >
                         {/* Portada */}
                         <div className="w-24 h-36 flex-shrink-0 bg-background-dark rounded-lg overflow-hidden border border-neutral-border shadow-md">
-                          {item.portada_url ? (
-                            <img
-                              src={item.portada_url}
-                              alt={item.titulo}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="material-symbols-outlined text-4xl text-neutral-muted">
-                                menu_book
-                              </span>
-                            </div>
-                          )}
+                          <CartItemCover
+                            titulo={item.titulo}
+                            editorial={item.editorial}
+                            portada_url={item.portada_url}
+                          />
                         </div>
 
                         {/* Detalles */}
