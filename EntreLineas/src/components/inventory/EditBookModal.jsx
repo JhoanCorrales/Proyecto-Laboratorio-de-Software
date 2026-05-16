@@ -225,12 +225,6 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
                   </label>
                   <input type="text" name="idioma" value={formData.idioma} onChange={handleChange} className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"/>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-100 mb-2">
-                    URL de Portada
-                  </label>
-                  <input type="text" name="portada_url" value={formData.portada_url} onChange={handleChange} className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all" placeholder="https://..."/>
-                </div>
               </div>
 
               {/* Sección de Inventario */}
