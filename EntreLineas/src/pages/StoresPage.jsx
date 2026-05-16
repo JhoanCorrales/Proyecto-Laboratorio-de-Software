@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StoreMap from '../components/map/StoreMap';
 import StoreFormModal from '../components/map/StoreFormModal';
 import { getStores, createStore, deleteStore } from '../services/storesService';
 
 export default function StoresPage() {
+  const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [tempMarker, setTempMarker] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -263,16 +265,10 @@ export default function StoresPage() {
 
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => {
-                              setTempMarker({
-                                lat: parseFloat(store.latitud),
-                                lng: parseFloat(store.longitud),
-                              });
-                              // Aquí podrías abrir un modal de edición
-                            }}
+                            onClick={() => navigate(`/store-inventory/${store.id}`)}
                             className="flex-1 text-xs bg-primary/20 text-primary hover:bg-primary/30 px-2 py-1 rounded transition-colors"
                           >
-                            Editar
+                            Administrar
                           </button>
                           <button
                             onClick={() => handleDeleteStore(store.id)}

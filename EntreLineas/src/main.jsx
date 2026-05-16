@@ -17,6 +17,7 @@ import RoleManagement from './pages/RoleManagement.jsx'
 import AddPaymentMethod from './pages/AddPaymentMethod.jsx'
 import Wallet from './pages/Wallet.jsx'
 import StoresPage from './pages/StoresPage.jsx'
+import StoreInventoryPage from './pages/StoreInventoryPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 const router = createBrowserRouter([
@@ -93,6 +94,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute requiredRole="Administrador">
         <StoresPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/store-inventory/:storeId",
+    element: (
+      <ProtectedRoute requiredRole="Administrador">
+        <StoreInventoryPage />
       </ProtectedRoute>
     ),
   }
