@@ -66,7 +66,7 @@ export default function StoreInventoryPage() {
           autor: item.autor,
           categoria: item.genero,
           stock: item.stock,
-          estado: item.stock >= 10 ? 'disponible' : item.stock > 0 ? 'bajo' : 'agotado',
+          estado: item.stock > 5 ? 'disponible' : item.stock > 0 ? 'bajo' : 'agotado',
           libro_id: item.libro_id,
           precio: item.precio,
         }));
@@ -133,7 +133,7 @@ export default function StoreInventoryPage() {
 
   const handleBookAdded = (newBook) => {
     const codigo = `LIB-${String(newBook.libro_id).padStart(4, '0')}`;
-    const estado = newBook.stock >= 10 ? 'disponible' : newBook.stock > 0 ? 'bajo' : 'agotado';
+    const estado = newBook.stock > 5 ? 'disponible' : newBook.stock > 0 ? 'bajo' : 'agotado';
     const bookWithId = {
       id: newBook.id,
       codigo,
@@ -169,7 +169,7 @@ export default function StoreInventoryPage() {
           autor: item.autor,
           categoria: item.genero,
           stock: item.stock,
-          estado: item.stock >= 10 ? 'disponible' : item.stock > 0 ? 'bajo' : 'agotado',
+          estado: item.stock > 5 ? 'disponible' : item.stock > 0 ? 'bajo' : 'agotado',
           libro_id: item.libro_id,
           precio: item.precio,
         }));

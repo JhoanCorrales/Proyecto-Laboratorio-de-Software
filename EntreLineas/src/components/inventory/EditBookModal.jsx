@@ -93,6 +93,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
 
     setSaving(true);
     setSuccess('');
+    setError('');
 
     try {
       // 1. Actualizar el libro en la base de datos local

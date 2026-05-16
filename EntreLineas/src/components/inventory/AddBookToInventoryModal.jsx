@@ -131,6 +131,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
 
     setLoading(true);
     setSuccess('');
+    setError('');
 
     try {
       // 1. Crear el libro en la base de datos local
