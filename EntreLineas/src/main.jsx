@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './styles/leaflet-custom.css'
 import Home from './Home.jsx'
 import { RouterProvider } from 'react-router-dom'
 import { createBrowserRouter } from 'react-router-dom'
@@ -15,6 +16,7 @@ import Cart from './pages/Cart.jsx'
 import RoleManagement from './pages/RoleManagement.jsx'
 import AddPaymentMethod from './pages/AddPaymentMethod.jsx'
 import Wallet from './pages/Wallet.jsx'
+import StoresPage from './pages/StoresPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 const router = createBrowserRouter([
@@ -85,6 +87,10 @@ const router = createBrowserRouter([
         <Wallet />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/stores",
+    element: <StoresPage />,
   }
 ]);
 

@@ -1,0 +1,154 @@
+/* ============================================================================
+   ESTILOS PERSONALIZADOS PARA LEAFLET CON TEMA DARK
+   ============================================================================ */
+
+/* Estilos generales del mapa */
+.leaflet-container {
+  background-color: #192d33 !important;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Controles del mapa */
+.leaflet-control {
+  background-color: rgba(25, 45, 51, 0.9) !important;
+  border: 1px solid rgba(50, 90, 103, 0.3) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background-color: rgba(50, 90, 103, 0.5) !important;
+  color: #2bbdee !important;
+  border: 1px solid rgba(50, 90, 103, 0.3) !important;
+  font-weight: bold !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background-color: rgba(50, 90, 103, 0.8) !important;
+}
+
+/* Attribution */
+.leaflet-control-attribution {
+  background-color: rgba(25, 45, 51, 0.7) !important;
+  color: #92bbc9 !important;
+  font-size: 10px !important;
+  padding: 4px 6px !important;
+  border: 1px solid rgba(50, 90, 103, 0.3) !important;
+}
+
+.leaflet-control-attribution a {
+  color: #2bbdee !important;
+  text-decoration: none;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline;
+}
+
+/* Popups */
+.leaflet-popup-content-wrapper {
+  background-color: rgba(25, 45, 51, 0.95) !important;
+  border: 1px solid rgba(50, 90, 103, 0.3) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  padding: 8px !important;
+}
+
+.leaflet-popup-content {
+  color: #f1f5f9 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.leaflet-popup-tip {
+  background-color: rgba(25, 45, 51, 0.95) !important;
+  border: 1px solid rgba(50, 90, 103, 0.3) !important;
+}
+
+/* Tooltip */
+.leaflet-tooltip {
+  background-color: rgba(25, 45, 51, 0.9) !important;
+  border: 1px solid rgba(50, 90, 103, 0.3) !important;
+  border-radius: 0.375rem !important;
+  color: #92bbc9 !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Marcadores */
+.leaflet-marker-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.leaflet-marker-icon:hover {
+  filter: drop-shadow(0 2px 8px rgba(43, 189, 238, 0.5));
+}
+
+/* Capas del mapa */
+.leaflet-tile {
+  filter: brightness(0.85) saturate(0.8);
+}
+
+/* Estilos para zoom levels */
+@media (max-width: 768px) {
+  .leaflet-control-zoom {
+    margin: 8px !important;
+  }
+
+  .leaflet-control-attribution {
+    margin: 8px !important;
+    font-size: 8px !important;
+    max-width: 150px !important;
+  }
+
+  .leaflet-popup-content-wrapper {
+    font-size: 11px !important;
+  }
+}
+
+/* Animaciones */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(43, 189, 238, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(43, 189, 238, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(43, 189, 238, 0);
+  }
+}
+
+.leaflet-marker-icon.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Estilos para marcadores arrastrados */
+.leaflet-marker-draggable {
+  cursor: grab;
+}
+
+.leaflet-marker-draggable:active {
+  cursor: grabbing;
+}
+
+/* Contenedor del mapa */
+.map-container {
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .leaflet-control {
+    margin: 6px !important;
+  }
+
+  .leaflet-control-zoom {
+    border: 1px solid rgba(50, 90, 103, 0.3) !important;
+  }
+}
