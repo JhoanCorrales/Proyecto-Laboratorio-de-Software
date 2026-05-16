@@ -78,7 +78,7 @@ function Catalogue() {
   const [activeCategory, setActiveCategory] = useState(
     initialCat
       ? { label: "Filtro", query: initialCat }
-      : { label: "Todos", query: "fiction" }
+      : { label: "Todos", query: "" }
   );
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -91,7 +91,7 @@ function Catalogue() {
   const buildUrl = useCallback(
     (pageNum) => {
       const q = search.trim();
-      const cat = activeCategory.query === "fiction" ? "" : activeCategory.query || "";
+      const cat = activeCategory.query || "";
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4003';
       return `${baseUrl}/api/books/public?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}&page=${pageNum}&limit=${PAGE_SIZE}`;
     },
@@ -112,7 +112,7 @@ function Catalogue() {
     if (cat) {
       setActiveCategory({ label: "Filtro", query: cat });
     } else if (!q) {
-      setActiveCategory({ label: "Todos", query: "fiction" });
+      setActiveCategory({ label: "Todos", query: "" });
     }
 
     setPriceMin(min ? Number(min) : null);
@@ -188,7 +188,7 @@ function Catalogue() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setSearch(val);
-      setActiveCategory({ label: "Todos", query: "fiction" });
+      setActiveCategory({ label: "Todos", query: "" });
     }, 500);
   };
 
@@ -196,7 +196,7 @@ function Catalogue() {
     e.preventDefault();
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSearch(inputValue);
-    setActiveCategory({ label: "Todos", query: "fiction" });
+    setActiveCategory({ label: "Todos", query: "" });
   };
 
   // Filtros locales de precio y disponibilidad

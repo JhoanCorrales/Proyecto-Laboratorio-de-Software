@@ -139,7 +139,7 @@ router.get("/public", async (req, res) => {
       conditions.push(`(LOWER(l.titulo) LIKE LOWER($${values.length}) OR LOWER(l.autor) LIKE LOWER($${values.length}))`);
     }
 
-    if (cat.trim() && cat !== "fiction") {
+    if (cat.trim()) {
       values.push(cat);
       conditions.push(`LOWER(c.nombre) = LOWER($${values.length})`);
     }

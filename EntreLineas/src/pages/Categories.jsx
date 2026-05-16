@@ -115,8 +115,7 @@ function Categories() {
   }, []);
 
   const handleCategoryClick = (nombre) => {
-    const query = QUERY_MAP[nombre] ?? `subject:${nombre.toLowerCase()}`;
-    navigate(`/catalogue?cat=${encodeURIComponent(query)}`);
+    navigate(`/catalogue?cat=${encodeURIComponent(nombre)}`);
   };
 
   return (
