@@ -224,4 +224,187 @@ router.delete("/:id", verifyToken, requireRole("Administrador"), async (req, res
   }
 });
 
+/**
+ * GET /api/stores/:storeId/inventory
+ * Obtiene el inventario de una tienda (libros con stock)
+ */
+router.get("/:storeId/inventory", verifyToken, requireRole("Administrador"), async (req, res) => {
+  const { storeId } = req.params;
+
+  try {
+    const result = await db.query(`
+      SELECT 
+        it.id,
+        it.tienda_id,
+        it.libro_id,
+        it.cantidad_disponible as stock,
+        it.cantidad_minima,
+        it.cantidad_maxima,
+        l.titulo,
+        l.autor,
+        l.isbn,
+        l.editorial,
+        l.año,
+        l.genero,
+        l.numero_paginas as paginas,
+        l.idioma,
+        l.fecha_publicacion,
+        l.precio
+      FROM inventario_tienda it
+      JOIN libros l ON it.libro_id = l.id
+      WHERE it.tienda_id = $1
+      ORDER BY l.titulo ASC
+    `, [storeId]);
+
+    res.status(200).json({
+      success: true,
+      inventory: result.rows,
+      count: result.rows.length,
+    });
+  } catch (error) {
+    console.error("Error fetching store inventory:", error);
+    res.status(500).json({ error: "Error al obtener inventario", message: error.message });
+  }
+});
+
+/**
+ * POST /api/stores/:storeId/inventory
+ * Agrega un libro al inventario de una tienda
+ * Body: { libro_id, cantidad_disponible, precio_unitario, cantidad_minima?, cantidad_maxima? }
+ */
+router.post("/:storeId/inventory", verifyToken, requireRole("Administrador"), async (req, res) => {
+  const { storeId } = req.params;
+  const { libro_id, cantidad_disponible, precio_unitario, cantidad_minima = 5, cantidad_maxima = 100 } = req.body;
+
+  try {
+    // Validar campos requeridos
+    if (!libro_id || !cantidad_disponible || precio_unitario === undefined) {
+      return res.status(400).json({
+        error: "Campos requeridos: libro_id, cantidad_disponible, precio_unitario",
+      });
+    }
+
+    // Verificar que la tienda existe
+    const storeCheck = await db.query("SELECT * FROM tiendas WHERE id = $1", [storeId]);
+    if (storeCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Tienda no encontrada" });
+    }
+
+    // Verificar que el libro existe
+    const bookCheck = await db.query("SELECT * FROM libros WHERE id = $1", [libro_id]);
+    if (bookCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Libro no encontrado" });
+    }
+
+    // Insertar o actualizar inventario
+    const existingInventory = await db.query(
+      "SELECT * FROM inventario_tienda WHERE tienda_id = $1 AND libro_id = $2",
+      [storeId, libro_id]
+    );
+
+    let result;
+    if (existingInventory.rows.length > 0) {
+      // Actualizar cantidad
+      result = await db.query(
+        `UPDATE inventario_tienda 
+         SET cantidad_disponible = cantidad_disponible + $1, 
+             cantidad_minima = $2,
+             cantidad_maxima = $3,
+             updated_at = NOW()
+         WHERE tienda_id = $4 AND libro_id = $5 
+         RETURNING *`,
+        [cantidad_disponible, cantidad_minima, cantidad_maxima, storeId, libro_id]
+      );
+    } else {
+      // Insertar nuevo
+      result = await db.query(
+        `INSERT INTO inventario_tienda 
+         (tienda_id, libro_id, cantidad_disponible, cantidad_minima, cantidad_maxima, ultimo_reabastecimiento)
+         VALUES ($1, $2, $3, $4, $5, NOW())
+         RETURNING *`,
+        [storeId, libro_id, cantidad_disponible, cantidad_minima, cantidad_maxima]
+      );
+    }
+
+    // Obtener datos completos del libro para respuesta
+    const fullData = await db.query(`
+      SELECT 
+        it.id,
+        it.tienda_id,
+        it.libro_id,
+        it.cantidad_disponible as stock,
+        it.cantidad_minima,
+        it.cantidad_maxima,
+        l.titulo,
+        l.autor,
+        l.isbn,
+        l.editorial,
+        l.año,
+        l.genero,
+        l.numero_paginas as paginas,
+        l.idioma,
+        l.fecha_publicacion
+      FROM inventario_tienda it
+      JOIN libros l ON it.libro_id = l.id
+      WHERE it.id = $1
+    `, [result.rows[0].id]);
+
+    res.status(201).json({
+      success: true,
+      message: "Libro agregado al inventario exitosamente",
+      inventory: fullData.rows[0],
+    });
+  } catch (error) {
+    console.error("Error adding to inventory:", error);
+    res.status(500).json({ error: "Error al agregar libro al inventario", message: error.message });
+  }
+});
+
+/**
+ * PUT /api/stores/:storeId/inventory/:libroId
+ * Actualiza la cantidad en el inventario de una tienda de manera absoluta
+ */
+router.put("/:storeId/inventory/:libroId", verifyToken, requireRole("Administrador"), async (req, res) => {
+  const { storeId, libroId } = req.params;
+  const { cantidad_disponible, cantidad_minima = 5, cantidad_maxima = 100 } = req.body;
+
+  try {
+    if (cantidad_disponible === undefined) {
+      return res.status(400).json({
+        error: "Campos requeridos: cantidad_disponible",
+      });
+    }
+
+    const existingInventory = await db.query(
+      "SELECT * FROM inventario_tienda WHERE tienda_id = $1 AND libro_id = $2",
+      [storeId, libroId]
+    );
+
+    if (existingInventory.rows.length === 0) {
+      return res.status(404).json({ error: "El libro no está en el inventario de la tienda" });
+    }
+
+    // Actualizar cantidad de manera absoluta en lugar de sumarla
+    const result = await db.query(
+      `UPDATE inventario_tienda 
+       SET cantidad_disponible = $1, 
+           cantidad_minima = $2,
+           cantidad_maxima = $3,
+           updated_at = NOW()
+       WHERE tienda_id = $4 AND libro_id = $5 
+       RETURNING *`,
+      [cantidad_disponible, cantidad_minima, cantidad_maxima, storeId, libroId]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Inventario actualizado exitosamente",
+      inventory: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error updating inventory:", error);
+    res.status(500).json({ error: "Error al actualizar inventario", message: error.message });
+  }
+});
+
 export default router;

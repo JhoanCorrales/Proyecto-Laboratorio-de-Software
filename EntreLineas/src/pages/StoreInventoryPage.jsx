@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getStores } from '../services/storesService';
 import AddBookToInventoryModal from '../components/inventory/AddBookToInventoryModal';
+import EditBookModal from '../components/inventory/EditBookModal';
+import { booksService } from '../services/booksService';
 
 export default function StoreInventoryPage() {
   const { storeId } = useParams();
@@ -14,6 +16,8 @@ export default function StoreInventoryPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showAddBookModal, setShowAddBookModal] = useState(false);
+  const [showEditBookModal, setShowEditBookModal] = useState(false);
+  const [selectedBookId, setSelectedBookId] = useState(null);
 
   // Búsqueda y filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,20 +49,39 @@ export default function StoreInventoryPage() {
     fetchStore();
   }, [storeId]);
 
-  // Mock de libros con stock - en producción vendrá de la API
+  // Cargar inventario de la tienda
   useEffect(() => {
-    const mockBooks = [
-      { id: 1, codigo: 'LIB-1024', titulo: 'Rayuela', autor: 'Julio Cortázar', categoria: 'Ficción', stock: 42, estado: 'disponible' },
-      { id: 2, codigo: 'LIB-2291', titulo: 'Sapiens: De animales a dioses', autor: 'Yuval Noah Harari', categoria: 'Historia', stock: 5, estado: 'bajo' },
-      { id: 3, codigo: 'LIB-0882', titulo: 'Crónica de una muerte anunciada', autor: 'Gabriel García Márquez', categoria: 'Ficción', stock: 0, estado: 'agotado' },
-      { id: 4, codigo: 'LIB-5540', titulo: 'Atomic Habits', autor: 'James Clear', categoria: 'Autoayuda', stock: 112, estado: 'disponible' },
-      { id: 5, codigo: 'LIB-1123', titulo: 'El Resplandor', autor: 'Stephen King', categoria: 'Terror', stock: 18, estado: 'disponible' },
-      { id: 6, codigo: 'LIB-3344', titulo: 'El Principito', autor: 'Antoine de Saint-Exupéry', categoria: 'Infantil', stock: 55, estado: 'disponible' },
-      { id: 7, codigo: 'LIB-4455', titulo: '1984', autor: 'George Orwell', categoria: 'Ficción', stock: 8, estado: 'bajo' },
-      { id: 8, codigo: 'LIB-5566', titulo: 'Mente Maestra', autor: 'Napoleon Hill', categoria: 'Autoayuda', stock: 0, estado: 'agotado' },
-    ];
-    setBooks(mockBooks);
-  }, []);
+    const fetchInventory = async () => {
+      if (!store) return;
+      
+      try {
+        setLoading(true);
+        const inventory = await booksService.getStoreInventory(store.id);
+        
+        // Transformar datos del inventario para la tabla
+        const formattedBooks = inventory.map((item, index) => ({
+          id: item.id,
+          codigo: `LIB-${String(item.libro_id).padStart(4, '0')}`,
+          titulo: item.titulo,
+          autor: item.autor,
+          categoria: item.genero,
+          stock: item.stock,
+          estado: item.stock >= 10 ? 'disponible' : item.stock > 0 ? 'bajo' : 'agotado',
+          libro_id: item.libro_id,
+          precio: item.precio,
+        }));
+        
+        setBooks(formattedBooks);
+      } catch (err) {
+        console.error('Error cargando inventario:', err);
+        setError('Error al cargar el inventario');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInventory();
+  }, [store]);
 
   // Filtrar libros
   const filteredBooks = books.filter(book => {
@@ -109,21 +132,58 @@ export default function StoreInventoryPage() {
   };
 
   const handleBookAdded = (newBook) => {
-    const codigo = `LIB-${Math.floor(Math.random() * 10000)}`;
+    const codigo = `LIB-${String(newBook.libro_id).padStart(4, '0')}`;
     const estado = newBook.stock >= 10 ? 'disponible' : newBook.stock > 0 ? 'bajo' : 'agotado';
     const bookWithId = {
-      id: Math.max(...books.map(b => b.id), 0) + 1,
+      id: newBook.id,
       codigo,
       titulo: newBook.titulo,
       autor: newBook.autor,
       categoria: newBook.genero,
-      stock: newBook.stock || 0,
+      stock: newBook.stock,
       estado,
+      libro_id: newBook.libro_id,
     };
     setBooks(prev => [bookWithId, ...prev]);
     setSuccess(`¡${newBook.titulo} agregado al inventario!`);
     setTimeout(() => setSuccess(''), 3000);
   };
+
+  const handleBookUpdated = () => {
+    // Para recargar los datos
+    const event = new Event('reload_inventory');
+    document.dispatchEvent(event);
+  };
+
+  // Reload inventory whenever 'reload_inventory' event is fired (or we could extract fetchInventory)
+  useEffect(() => {
+    const fetchInventory = async () => {
+      if (!store) return;
+      try {
+        setLoading(true);
+        const inventory = await booksService.getStoreInventory(store.id);
+        const formattedBooks = inventory.map((item) => ({
+          id: item.id,
+          codigo: `LIB-${String(item.libro_id).padStart(4, '0')}`,
+          titulo: item.titulo,
+          autor: item.autor,
+          categoria: item.genero,
+          stock: item.stock,
+          estado: item.stock >= 10 ? 'disponible' : item.stock > 0 ? 'bajo' : 'agotado',
+          libro_id: item.libro_id,
+          precio: item.precio,
+        }));
+        setBooks(formattedBooks);
+      } catch (err) {
+        console.error('Error cargando inventario:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    document.addEventListener('reload_inventory', fetchInventory);
+    return () => document.removeEventListener('reload_inventory', fetchInventory);
+  }, [store]);
 
   if (loading) {
     return (
@@ -302,10 +362,14 @@ export default function StoreInventoryPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <button
+                              onClick={() => {
+                                setSelectedBookId(book.libro_id);
+                                setShowEditBookModal(true);
+                              }}
                               className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                              title="Editar stock"
+                              title="Editar Libro"
                             >
-                              <span className="material-symbols-outlined">edit_square</span>
+                              <span className="material-symbols-outlined">edit</span>
                             </button>
                             <button
                               className="p-2 text-neutral-muted hover:bg-neutral-accent rounded-lg transition-colors"
@@ -413,6 +477,19 @@ export default function StoreInventoryPage() {
         storeId={storeId}
         onBookAdded={handleBookAdded}
       />
+
+      {showEditBookModal && (
+        <EditBookModal
+          isOpen={showEditBookModal}
+          onClose={() => {
+            setShowEditBookModal(false);
+            setSelectedBookId(null);
+          }}
+          storeId={storeId}
+          libroId={selectedBookId}
+          onBookUpdated={handleBookUpdated}
+        />
+      )}
     </div>
   );
 }

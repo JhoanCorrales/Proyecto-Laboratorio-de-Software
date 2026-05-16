@@ -1,203 +1,127 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { booksService } from '../../services/booksService';
 
 export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBookAdded }) {
   const [formData, setFormData] = useState({
+    libroId: null,
+    openLibraryKey: null,
     titulo: '',
     autor: '',
-    año: new Date().getFullYear().toString(),
+    año: '',
     genero: '',
     paginas: '',
     editorial: '',
     isbn: '',
-    idioma: 'es',
+    idioma: '',
     fechaPublicacion: '',
-    estado: 'nuevo',
-    precio: '',
+    precioUnitarioPesos: '',
+    cantidadInicial: '1',
+    portada_url: '',
   });
 
-  const [touched, setTouched] = useState({});
-  const [errors, setErrors] = useState({});
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
-  const generos = [
-    { value: 'ficcion', label: 'Ficción' },
-    { value: 'no-ficcion', label: 'No Ficción' },
-    { value: 'fantasia', label: 'Fantasía' },
-    { value: 'terror', label: 'Terror' },
-    { value: 'biografia', label: 'Biografía' },
-    { value: 'ciencia', label: 'Ciencia' },
-    { value: 'infantil', label: 'Infantil' },
-    { value: 'autoayuda', label: 'Autoayuda' },
-    { value: 'historia', label: 'Historia' },
-  ];
+  // Buscar libros mientras el usuario escribe
+  const handleTituloChange = async (e) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      titulo: value,
+      libroId: null,
+    }));
+    setError('');
 
-  const idiomas = [
-    { value: 'es', label: 'Español' },
-    { value: 'en', label: 'Inglés' },
-    { value: 'fr', label: 'Francés' },
-    { value: 'de', label: 'Alemán' },
-    { value: 'it', label: 'Italiano' },
-    { value: 'pt', label: 'Portugués' },
-  ];
-
-  // Helper para renderizar ícono de validación
-  const renderFieldIcon = (fieldName) => {
-    if (!touched[fieldName]) return null;
-    if (errors[fieldName]) {
-      return (
-        <span className="material-symbols-outlined text-red-400 text-lg">error</span>
-      );
-    }
-    return (
-      <span className="material-symbols-outlined text-green-400 text-lg">check_circle</span>
-    );
-  };
-
-  // Helper para obtener clases del input basado en validación
-  const getInputClass = (fieldName) => {
-    const baseClass = 'w-full bg-neutral-accent/50 border rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all';
-    const errorClass = touched[fieldName] && errors[fieldName] ? 'border-red-500' : 'border-neutral-border';
-    const successClass = touched[fieldName] && !errors[fieldName] ? 'border-green-500' : '';
-    return `${baseClass} ${errorClass} ${successClass}`;
-  };
-
-  // Validación de campos
-  const validateField = (name, value) => {
-    const newErrors = { ...errors };
-
-    switch (name) {
-      case 'titulo':
-        if (!value.trim()) {
-          newErrors.titulo = 'El título es obligatorio';
-        } else if (value.trim().length < 3) {
-          newErrors.titulo = 'El título debe tener al menos 3 caracteres';
-        } else {
-          delete newErrors.titulo;
-        }
-        break;
-
-      case 'autor':
-        if (!value.trim()) {
-          newErrors.autor = 'El autor es obligatorio';
-        } else if (value.trim().length < 3) {
-          newErrors.autor = 'El nombre del autor debe tener al menos 3 caracteres';
-        } else {
-          delete newErrors.autor;
-        }
-        break;
-
-      case 'año':
-        if (!value) {
-          newErrors.año = 'El año es obligatorio';
-        } else if (!/^\d{4}$/.test(value)) {
-          newErrors.año = 'El año debe ser válido (YYYY)';
-        } else if (parseInt(value) < 1000 || parseInt(value) > new Date().getFullYear()) {
-          newErrors.año = `El año debe estar entre 1000 y ${new Date().getFullYear()}`;
-        } else {
-          delete newErrors.año;
-        }
-        break;
-
-      case 'genero':
-        if (!value) {
-          newErrors.genero = 'Selecciona un género';
-        } else {
-          delete newErrors.genero;
-        }
-        break;
-
-      case 'paginas':
-        if (!value) {
-          newErrors.paginas = 'Las páginas son obligatorias';
-        } else if (parseInt(value) < 1) {
-          newErrors.paginas = 'El número de páginas debe ser mayor a 0';
-        } else {
-          delete newErrors.paginas;
-        }
-        break;
-
-      case 'editorial':
-        if (!value.trim()) {
-          newErrors.editorial = 'La editorial es obligatoria';
-        } else if (value.trim().length < 2) {
-          newErrors.editorial = 'La editorial debe tener al menos 2 caracteres';
-        } else {
-          delete newErrors.editorial;
-        }
-        break;
-
-      case 'isbn':
-        if (!value.trim()) {
-          newErrors.isbn = 'ISSN / ISBN es obligatorio';
-        } else if (!/^[0-9\-]{7,}$/.test(value)) {
-          newErrors.isbn = 'ISSN / ISBN no es válido';
-        } else {
-          delete newErrors.isbn;
-        }
-        break;
-
-      case 'fechaPublicacion':
-        if (!value) {
-          newErrors.fechaPublicacion = 'La fecha de publicación es obligatoria';
-        } else {
-          delete newErrors.fechaPublicacion;
-        }
-        break;
-
-      case 'precio':
-        if (!value) {
-          newErrors.precio = 'El precio es obligatorio';
-        } else if (parseFloat(value) < 0) {
-          newErrors.precio = 'El precio no puede ser negativo';
-        } else {
-          delete newErrors.precio;
-        }
-        break;
-
-      default:
-        break;
+    if (value.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
     }
 
-    setErrors(newErrors);
+    setSearchLoading(true);
+    try {
+      const searchParams = new URLSearchParams({
+        q: `q=${encodeURIComponent(value)}&limit=10&fields=key,title,author_name,cover_i,isbn,first_publish_year,subject,language,number_of_pages_median,publisher`,
+        type: "search"
+      });
+      const res = await fetch(`http://localhost:4003/api/auth/openlibrary?${searchParams}`);
+      if (!res.ok) throw new Error("Error buscando libros");
+      const data = await res.json();
+      
+      const parsedBooks = (data.docs || []).map(doc => ({
+        id: doc.key,
+        titulo: doc.title || '',
+        autor: doc.author_name?.[0] || '',
+        isbn: doc.isbn?.[0] || '',
+        año: doc.first_publish_year ? String(doc.first_publish_year) : '',
+        genero: doc.subject?.[0] || '',
+        paginas: doc.number_of_pages_median ? String(doc.number_of_pages_median) : '',
+        editorial: doc.publisher?.[0] || '',
+        idioma: doc.language?.[0] || '',
+        portada_url: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : '',
+      }));
+      setSuggestions(parsedBooks);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error('Error buscando libros:', err);
+      setError('Error al buscar libros en Open Library');
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
+  // Seleccionar un libro de las sugerencias
+  const handleSelectBook = (book) => {
+    setFormData(prev => ({
+      ...prev,
+      libroId: null,
+      openLibraryKey: book.id,
+      titulo: book.titulo,
+      autor: book.autor || '',
+      año: book.año || '',
+      genero: book.genero || '',
+      paginas: book.paginas || '',
+      editorial: book.editorial || '',
+      isbn: book.isbn || '',
+      idioma: book.idioma || '',
+      portada_url: book.portada_url || '',
+      fechaPublicacion: book.año ? `${book.año}-01-01` : '',
+    }));
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  // Cambiar campo de cantidad o precio
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    if (touched[name]) {
-      validateField(name, value);
-    }
+    setError('');
   };
 
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
-    validateField(name, value);
-  };
-
-  const handleRadioChange = (value) => {
-    setFormData(prev => ({ ...prev, estado: value }));
-  };
-
+  // Validar el formulario
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.titulo.trim()) newErrors.titulo = 'El título es obligatorio';
-    if (!formData.autor.trim()) newErrors.autor = 'El autor es obligatorio';
-    if (!formData.año) newErrors.año = 'El año es obligatorio';
-    if (!formData.genero) newErrors.genero = 'Selecciona un género';
-    if (!formData.paginas) newErrors.paginas = 'Las páginas son obligatorias';
-    if (!formData.editorial.trim()) newErrors.editorial = 'La editorial es obligatoria';
-    if (!formData.isbn.trim()) newErrors.isbn = 'ISSN / ISBN es obligatorio';
-    if (!formData.fechaPublicacion) newErrors.fechaPublicacion = 'La fecha de publicación es obligatoria';
-    if (!formData.precio) newErrors.precio = 'El precio es obligatorio';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!formData.titulo || !formData.autor) {
+      setError('El título y el autor son obligatorios. Selecciona un libro del catálogo.');
+      return false;
+    }
+    if (!formData.precioUnitarioPesos || parseFloat(formData.precioUnitarioPesos) <= 0) {
+      setError('El precio debe ser mayor a 0');
+      return false;
+    }
+    if (!formData.cantidadInicial || parseInt(formData.cantidadInicial) < 1) {
+      setError('La cantidad debe ser al menos 1');
+      return false;
+    }
+    return true;
   };
 
+  // Enviar formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -209,53 +133,84 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
     setSuccess('');
 
     try {
-      // TODO: Conectar con API real
-      // const response = await addBookToInventory(storeId, formData);
-      
-      // Por ahora, simulamos la creación
-      console.log('Libro agregado al inventario:', formData);
+      // 1. Crear el libro en la base de datos local
+      const newBook = await booksService.addBook({
+        titulo: formData.titulo,
+        autor: formData.autor,
+        isbn: formData.isbn,
+        editorial: formData.editorial,
+        paginas: formData.paginas,
+        idioma: formData.idioma,
+        año: formData.año,
+        genero: formData.genero,
+        precio: parseFloat(formData.precioUnitarioPesos),
+        portada_url: formData.portada_url,
+      });
 
-      setSuccess('¡Libro agregado exitosamente al inventario!');
-      
+      // 2. Agregar al inventario con el nuevo ID (o existente)
+      const inventoryData = {
+        ...formData,
+        libroId: newBook.id
+      };
+      const result = await booksService.addBookToInventory(storeId, inventoryData);
+
+      setSuccess(`¡${formData.titulo} agregado al inventario!`);
+
       setTimeout(() => {
-        // Notificar al componente padre
         if (onBookAdded) {
-          onBookAdded(formData);
+          onBookAdded(result);
         }
-        
-        // Resetear formulario
+
         setFormData({
+          libroId: null,
+          openLibraryKey: null,
           titulo: '',
           autor: '',
-          año: new Date().getFullYear().toString(),
+          año: '',
           genero: '',
           paginas: '',
           editorial: '',
           isbn: '',
-          idioma: 'es',
+          idioma: '',
           fechaPublicacion: '',
-          estado: 'nuevo',
-          precio: '',
+          precioUnitarioPesos: '',
+          cantidadInicial: '1',
+          portada_url: '',
         });
-        setTouched({});
-        setErrors({});
+        setError('');
         setSuccess('');
         onClose();
       }, 1500);
-    } catch (error) {
-      console.error('Error al agregar libro:', error);
-      setErrors({ submit: 'Error al agregar el libro. Intenta nuevamente.' });
+    } catch (err) {
+      console.error('Error al agregar libro:', err);
+      setError(err.message || 'Error al agregar el libro. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Cerrar sugerencias al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background-dark/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
       <div className="bg-neutral-dark border border-neutral-border/50 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-neutral-border/30 px-6 py-4 flex items-center justify-between bg-neutral-dark">
           <div className="flex items-center gap-3">
@@ -272,300 +227,148 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-
+          {/* Mensajes */}
           {success && (
             <div className="p-3 bg-green-900/30 border border-green-600/50 text-green-400 rounded-lg flex items-center gap-2 text-sm">
               <span className="material-symbols-outlined text-sm">check_circle</span>
               {success}
             </div>
           )}
-          {errors.submit && (
+          {error && (
             <div className="p-3 bg-red-900/30 border border-red-600/50 text-red-400 rounded-lg flex items-center gap-2 text-sm">
               <span className="material-symbols-outlined text-sm">error</span>
-              {errors.submit}
+              {error}
             </div>
           )}
 
-          {/* Sección: Información del libro */}
+          {/* Sección: Búsqueda de Libro */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-lg">info</span>
-              Información del Libro
+              <span className="material-symbols-outlined text-primary text-lg">search</span>
+              Buscar Libro
             </h3>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-slate-100">
-                  Título del Libro <span className="text-red-400">*</span>
-                </label>
-                {renderFieldIcon('titulo')}
-              </div>
-              <input
-                type="text"
-                name="titulo"
-                value={formData.titulo}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="Ej: Cien años de soledad"
-                className={getInputClass('titulo')}
-              />
-              {errors.titulo && touched.titulo && (
-                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  {errors.titulo}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-slate-100">
-                  Autor <span className="text-red-400">*</span>
-                </label>
-                {renderFieldIcon('autor')}
-              </div>
-              <input
-                type="text"
-                name="autor"
-                value={formData.autor}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="Nombre completo del autor"
-                className={getInputClass('autor')}
-              />
-              {errors.autor && touched.autor && (
-                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  {errors.autor}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-100">
-                    Año <span className="text-red-400">*</span>
-                  </label>
-                  {renderFieldIcon('año')}
-                </div>
+            {/* Campo de búsqueda de título */}
+            <div className="relative">
+              <label className="block text-sm font-semibold text-slate-100 mb-2">
+                Título del Libro <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
                 <input
-                  type="number"
-                  name="año"
-                  value={formData.año}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="YYYY"
-                  className={getInputClass('año')}
-                />
-                {errors.año && touched.año && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {errors.año}
-                  </p>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-100">
-                    Género <span className="text-red-400">*</span>
-                  </label>
-                  {renderFieldIcon('genero')}
-                </div>
-                <select
-                  name="genero"
-                  value={formData.genero}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`${getInputClass('genero')} appearance-none`}
-                >
-                  <option value="">Seleccionar</option>
-                  {generos.map(g => (
-                    <option key={g.value} value={g.value}>{g.label}</option>
-                  ))}
-                </select>
-                {errors.genero && touched.genero && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {errors.genero}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-100">
-                    Páginas <span className="text-red-400">*</span>
-                  </label>
-                  {renderFieldIcon('paginas')}
-                </div>
-                <input
-                  type="number"
-                  name="paginas"
-                  value={formData.paginas}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="0"
-                  className={getInputClass('paginas')}
-                />
-                {errors.paginas && touched.paginas && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {errors.paginas}
-                  </p>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-100">
-                    Editorial <span className="text-red-400">*</span>
-                  </label>
-                  {renderFieldIcon('editorial')}
-                </div>
-                <input
+                  ref={inputRef}
                   type="text"
-                  name="editorial"
-                  value={formData.editorial}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="Nombre de editorial"
-                  className={getInputClass('editorial')}
+                  value={formData.titulo}
+                  onChange={handleTituloChange}
+                  onFocus={() => formData.titulo.trim().length >= 2 && setShowSuggestions(true)}
+                  placeholder="Escribe el título del libro (ej: Cien años de...)"
+                  className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"
                 />
-                {errors.editorial && touched.editorial && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {errors.editorial}
-                  </p>
+                {searchLoading && (
+                  <span className="absolute right-3 top-10 material-symbols-outlined text-primary animate-spin">
+                    hourglass_empty
+                  </span>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Sección: Detalles adicionales */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-lg">library_books</span>
-              Detalles Adicionales
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-100">
-                    ISSN / ISBN <span className="text-red-400">*</span>
-                  </label>
-                  {renderFieldIcon('isbn')}
-                </div>
-                <input
-                  type="text"
-                  name="isbn"
-                  value={formData.isbn}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="0000-0000"
-                  className={getInputClass('isbn')}
-                />
-                {errors.isbn && touched.isbn && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {errors.isbn}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-100 mb-2">
-                  Idioma
-                </label>
-                <select
-                  name="idioma"
-                  value={formData.idioma}
-                  onChange={handleChange}
-                  className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all appearance-none"
+              {/* Sugerencias */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute top-full left-0 right-0 mt-1 bg-neutral-dark border border-neutral-border/50 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto"
                 >
-                  {idiomas.map(i => (
-                    <option key={i.value} value={i.value}>{i.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-100">
-                    Fecha de Publicación <span className="text-red-400">*</span>
-                  </label>
-                  {renderFieldIcon('fechaPublicacion')}
-                </div>
-                <input
-                  type="date"
-                  name="fechaPublicacion"
-                  value={formData.fechaPublicacion}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={getInputClass('fechaPublicacion')}
-                />
-                {errors.fechaPublicacion && touched.fechaPublicacion && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {errors.fechaPublicacion}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-100 mb-2">
-                  Estado
-                </label>
-                <div className="flex gap-2 p-1 border border-neutral-border rounded-lg bg-neutral-accent/50">
-                  {['nuevo', 'usado'].map((val) => (
-                    <label
-                      key={val}
-                      className="flex-1 flex items-center justify-center px-3 py-1.5 rounded-md cursor-pointer hover:bg-white/5 transition-colors"
+                  {suggestions.map(book => (
+                    <button
+                      key={book.id}
+                      type="button"
+                      onClick={() => handleSelectBook(book)}
+                      className="w-full px-4 py-2 text-left hover:bg-neutral-accent/50 transition-colors border-b border-neutral-border/30 last:border-b-0"
                     >
-                      <input
-                        type="radio"
-                        name="estado"
-                        value={val}
-                        checked={formData.estado === val}
-                        onChange={() => handleRadioChange(val)}
-                        className="hidden"
-                      />
-                      <span className={`text-sm ${formData.estado === val ? 'text-primary font-bold' : 'text-slate-300'}`}>
-                        {val.charAt(0).toUpperCase() + val.slice(1)}
-                      </span>
-                    </label>
+                      <div className="text-slate-100 text-sm font-semibold">{book.titulo}</div>
+                      <div className="text-neutral-muted text-xs">{book.autor || 'Autor desconocido'}</div>
+                    </button>
                   ))}
+                </div>
+              )}
+
+              {showSuggestions && formData.titulo.trim().length >= 2 && suggestions.length === 0 && !searchLoading && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-neutral-dark border border-neutral-border/50 rounded-lg shadow-lg z-10 p-3 text-center text-neutral-muted text-sm">
+                  No se encontraron libros con ese título
+                </div>
+              )}
+            </div>
+
+            {/* Mostrar detalles del libro seleccionado */}
+            {(formData.openLibraryKey || formData.autor) && (
+              <div className="bg-neutral-accent/30 border border-neutral-border/30 rounded-lg p-4 space-y-2">
+                <div className="text-sm">
+                  <span className="text-neutral-muted">Autor:</span>
+                  <span className="text-slate-100 ml-2">{formData.autor || 'N/A'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-neutral-muted">Género:</span>
+                  <span className="text-slate-100 ml-2">{formData.genero || 'N/A'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-neutral-muted">Editorial:</span>
+                  <span className="text-slate-100 ml-2">{formData.editorial || 'N/A'}</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-neutral-muted">ISBN:</span>
+                  <span className="text-slate-100 ml-2">{formData.isbn || 'N/A'}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sección: Detalles de Inventario */}
+          {(formData.openLibraryKey || formData.autor) && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-lg">inventory_2</span>
+                Detalles de Inventario
+              </h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Cantidad inicial */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-100 mb-2">
+                    Cantidad Inicial <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="cantidadInicial"
+                    value={formData.cantidadInicial}
+                    onChange={handleChange}
+                    min="1"
+                    className="w-full bg-neutral-accent/50 border border-neutral-border rounded-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"
+                    placeholder="1"
+                  />
+                </div>
+
+                {/* Precio en Pesos */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-100 mb-2">
+                    Precio por Unidad (COP) <span className="text-red-400">*</span>
+                  </label>
+                  <div className="flex">
+                    <span className="flex items-center px-3 bg-neutral-accent/50 border border-r-0 border-neutral-border rounded-l-lg text-neutral-muted">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      name="precioUnitarioPesos"
+                      value={formData.precioUnitarioPesos}
+                      onChange={handleChange}
+                      step="100"
+                      min="0"
+                      className="flex-1 bg-neutral-accent/50 border border-l-0 border-neutral-border rounded-r-lg px-4 py-2 text-slate-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-slate-100">
-                  Precio (USD) <span className="text-red-400">*</span>
-                </label>
-                {renderFieldIcon('precio')}
-              </div>
-              <input
-                type="number"
-                name="precio"
-                value={formData.precio}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="0.00"
-                step="0.01"
-                className={getInputClass('precio')}
-              />
-              {errors.precio && touched.precio && (
-                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  {errors.precio}
-                </p>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* Botones */}
           <div className="flex gap-3 pt-4 border-t border-neutral-border/30">
@@ -578,9 +381,9 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (!formData.openLibraryKey && !formData.autor)}
               className={`flex-1 font-bold px-6 py-2 rounded-lg flex items-center justify-center gap-2 transition-all ${
-                !loading
+                !loading && (formData.openLibraryKey || formData.autor)
                   ? 'bg-primary text-background-dark hover:bg-primary/90 cursor-pointer'
                   : 'bg-neutral-accent text-neutral-muted cursor-not-allowed opacity-50'
               }`}
@@ -591,15 +394,9 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
               {loading ? 'Agregando...' : 'Agregar Libro'}
             </button>
           </div>
-
-          {Object.keys(errors).length > 0 && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs text-red-300 flex items-start gap-2">
-              <span className="material-symbols-outlined text-sm flex-shrink-0 mt-0.5">info</span>
-              <span>Por favor, completa todos los campos requeridos correctamente para continuar</span>
-            </div>
-          )}
         </form>
       </div>
     </div>
   );
 }
+

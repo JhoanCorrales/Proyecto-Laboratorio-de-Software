@@ -1,0 +1,207 @@
+import express from "express";
+import db from "../db/index.js";
+import { verifyToken, requireRole } from "../middleware/auth.js";
+
+const router = express.Router();
+
+/**
+ * GET /api/books
+ * Get all books ordered by title
+ */
+router.get("/", async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT id, titulo, autor, año, genero, numero_paginas as paginas, editorial, isbn, idioma, fecha_publicacion, precio FROM libros ORDER BY titulo ASC"
+    );
+
+    res.status(200).json({
+      success: true,
+      books: result.rows,
+      count: result.rows.length,
+    });
+  } catch (err) {
+    console.error("Error fetching books:", err);
+    res.status(500).json({ success: false, message: "Error fetching books", error: err.message });
+  }
+});
+
+/**
+ * POST /api/books
+ * Add a new book to the database
+ */
+router.post("/", verifyToken, requireRole("Administrador"), async (req, res) => {
+  const { titulo, autor, isbn, editorial, paginas, idioma, año, genero, precio, portada_url, descripcion } = req.body;
+
+  if (!titulo || !autor || precio === undefined) {
+    return res.status(400).json({ error: "Título, autor y precio son requeridos" });
+  }
+
+  try {
+    // Verificar si existe por ISBN
+    if (isbn) {
+      const existing = await db.query("SELECT * FROM libros WHERE isbn = $1", [isbn]);
+      if (existing.rows.length > 0) {
+        return res.status(200).json({ success: true, message: "El libro ya existe", book: existing.rows[0] });
+      }
+    } else {
+      // Verificar por título y autor
+      const existing = await db.query(
+        "SELECT * FROM libros WHERE LOWER(titulo) = LOWER($1) AND LOWER(autor) = LOWER($2)",
+        [titulo, autor]
+      );
+      if (existing.rows.length > 0) {
+        return res.status(200).json({ success: true, message: "El libro ya existe", book: existing.rows[0] });
+      }
+    }
+
+    // Convert category string to categoria_id if an exact match exists, otherwise NULL
+    let categoria_id = null;
+    if (genero) {
+      const catCheck = await db.query("SELECT id FROM categorias WHERE LOWER(nombre) = LOWER($1)", [genero]);
+      if (catCheck.rows.length > 0) {
+        categoria_id = catCheck.rows[0].id;
+      }
+    }
+
+    // Parse the year string to a valid date if possible, otherwise use null
+    // Assuming año is just the year like "1997"
+    let fecha_publicacion = null;
+    if (año) {
+      fecha_publicacion = `${año}-01-01`; // PostgreSQL DATE format
+    }
+
+    const result = await db.query(
+        `INSERT INTO libros (titulo, autor, isbn, editorial, precio, descripcion, 
+         fecha_publicacion, numero_paginas, idioma, portada_url, categoria_id, año, genero) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+        [titulo, autor, isbn || null, editorial || null, precio || 0, descripcion || null,
+         fecha_publicacion, paginas ? parseInt(paginas) : null, idioma || 'Español', portada_url || null, categoria_id, año || null, genero || null]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Libro creado exitosamente",
+      book: result.rows[0],
+    });
+  } catch (err) {
+    console.error("Error creating book:", err);
+    res.status(500).json({ success: false, message: "Error al crear el libro", error: err.message });
+  }
+});
+
+/**
+ * GET /api/books/search?q=query
+ * Search books by title (case-insensitive)
+ */
+router.get("/search", async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query must be at least 2 characters",
+      });
+    }
+
+    const result = await db.query(
+      "SELECT id, titulo, autor, año, genero, numero_paginas as paginas, editorial, isbn, idioma, fecha_publicacion, precio FROM libros WHERE LOWER(titulo) LIKE LOWER($1) ORDER BY titulo ASC LIMIT 10",
+      [`%${q}%`]
+    );
+
+    res.status(200).json({
+      success: true,
+      books: result.rows,
+      count: result.rows.length,
+    });
+  } catch (err) {
+    console.error("Error searching books:", err);
+    res.status(500).json({ success: false, message: "Error searching books", error: err.message });
+  }
+});
+
+/**
+ * GET /api/books/:id
+ * Get specific book by ID
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.query(
+      "SELECT id, titulo, autor, año, genero, numero_paginas as paginas, editorial, isbn, idioma, fecha_publicacion, precio FROM libros WHERE id = $1",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      book: result.rows[0],
+    });
+  } catch (err) {
+    console.error("Error fetching book:", err);
+    res.status(500).json({ success: false, message: "Error fetching book", error: err.message });
+  }
+});
+
+/**
+ * PUT /api/books/:id
+ * Update an existing book in the database
+ */
+router.put("/:id", verifyToken, requireRole("Administrador"), async (req, res) => {
+  const { id } = req.params;
+  const { titulo, autor, isbn, editorial, paginas, idioma, año, genero, precio, portada_url, descripcion } = req.body;
+
+  if (!titulo || !autor || precio === undefined) {
+    return res.status(400).json({ error: "Título, autor y precio son requeridos" });
+  }
+
+  try {
+    const existing = await db.query("SELECT * FROM libros WHERE id = $1", [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: "Libro no encontrado" });
+    }
+
+    let categoria_id = existing.rows[0].categoria_id;
+    if (genero) {
+      const catCheck = await db.query("SELECT id FROM categorias WHERE LOWER(nombre) = LOWER($1)", [genero]);
+      if (catCheck.rows.length > 0) {
+        categoria_id = catCheck.rows[0].id;
+      }
+    }
+    
+    let fecha_publicacion = existing.rows[0].fecha_publicacion;
+    if (año) {
+      fecha_publicacion = `${año}-01-01`; 
+    }
+
+    const result = await db.query(
+        `UPDATE libros 
+         SET titulo = $1, autor = $2, isbn = $3, editorial = $4, precio = $5, descripcion = $6, 
+             fecha_publicacion = $7, numero_paginas = $8, idioma = $9, portada_url = $10, 
+             categoria_id = $11, año = $12, genero = $13, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $14
+         RETURNING *`,
+        [titulo, autor, isbn || null, editorial || null, precio || 0, descripcion || null,
+         fecha_publicacion, paginas ? parseInt(paginas) : null, idioma || 'Español', portada_url || null, 
+         categoria_id, año || null, genero || null, id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Libro actualizado exitosamente",
+      book: result.rows[0],
+    });
+  } catch (err) {
+    console.error("Error updating book:", err);
+    res.status(500).json({ success: false, message: "Error al actualizar el libro", error: err.message });
+  }
+});
+
+export default router;
