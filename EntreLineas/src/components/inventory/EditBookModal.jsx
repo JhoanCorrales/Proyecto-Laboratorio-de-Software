@@ -46,6 +46,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
           isbn: bookData.isbn || '',
           idioma: bookData.idioma || '',
           fechaPublicacion: bookData.fecha_publicacion ? bookData.fecha_publicacion.split('T')[0] : '',
+          precioUnitarioPesos: bookData.precio ? String(Math.round(bookData.precio)) : '',
           cantidadInicial: itemInventory ? String(itemInventory.stock) : '0',
           portada_url: bookData.portada_url || '',
         });
