@@ -127,7 +127,7 @@ router.get("/search", async (req, res) => {
  */
 router.get("/public", async (req, res) => {
   try {
-    const { page = 1, limit = 20, q = "", cat = "" } = req.query;
+    const { page = 1, limit = 20, q = "", cat = "", priceMin, priceMax, disponibles } = req.query;
     const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
     const limitNum = parseInt(limit);
 
@@ -140,8 +140,27 @@ router.get("/public", async (req, res) => {
     }
 
     if (cat.trim()) {
-      values.push(`%${cat}%`);
-      conditions.push(`(LOWER(l.genero) LIKE LOWER($${values.length}) OR LOWER(c.nombre) = LOWER($${values.length}))`);
+      values.push(cat.trim());
+      // Búsqueda exacta en categoría O coincidencia exacta de palabra completa en géneros (separados por comas)
+      conditions.push(`(LOWER(c.nombre) = LOWER($${values.length}) OR 
+        LOWER(l.genero) = LOWER($${values.length}) OR
+        LOWER(l.genero) LIKE LOWER(CONCAT($${values.length}, ', %')) OR
+        LOWER(l.genero) LIKE LOWER(CONCAT('%, ', $${values.length}, ',%')) OR
+        LOWER(l.genero) LIKE LOWER(CONCAT('%, ', $${values.length})))`);
+    }
+
+    if (priceMin !== undefined && priceMin !== null && priceMin !== "") {
+      values.push(parseFloat(priceMin));
+      conditions.push(`l.precio >= $${values.length}`);
+    }
+
+    if (priceMax !== undefined && priceMax !== null && priceMax !== "") {
+      values.push(parseFloat(priceMax));
+      conditions.push(`l.precio <= $${values.length}`);
+    }
+
+    if (disponibles === "1") {
+      conditions.push(`l.stock_general > 0`);
     }
 
     conditions.push(`EXISTS (SELECT 1 FROM inventario_tienda it WHERE it.libro_id = l.id)`);

@@ -93,9 +93,15 @@ function Catalogue() {
       const q = search.trim();
       const cat = activeCategory.query || "";
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4003';
-      return `${baseUrl}/api/books/public?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}&page=${pageNum}&limit=${PAGE_SIZE}`;
+      let url = `${baseUrl}/api/books/public?q=${encodeURIComponent(q)}&cat=${encodeURIComponent(cat)}&page=${pageNum}&limit=${PAGE_SIZE}`;
+      
+      if (priceMin !== null) url += `&priceMin=${priceMin}`;
+      if (priceMax !== null) url += `&priceMax=${priceMax}`;
+      if (soloDisponibles) url += `&disponibles=1`;
+      
+      return url;
     },
-    [search, activeCategory]
+    [search, activeCategory, priceMin, priceMax, soloDisponibles]
   );
 
   // Solo maneja cambios posteriores de URL (cuando el usuario aplica filtros desde Navbar)
