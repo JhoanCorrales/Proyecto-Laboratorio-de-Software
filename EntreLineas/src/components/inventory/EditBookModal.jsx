@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { booksService } from '../../services/booksService';
+import { getLanguageName } from '../../lib/languageMap';
 
 export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBookUpdated }) {
   const [formData, setFormData] = useState({
@@ -44,7 +45,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
           paginas: bookData.paginas ? String(bookData.paginas) : '',
           editorial: bookData.editorial || '',
           isbn: bookData.isbn || '',
-          idioma: bookData.idioma || '',
+          idioma: bookData.idioma ? getLanguageName(bookData.idioma) : '',
           fechaPublicacion: bookData.fecha_publicacion ? bookData.fecha_publicacion.split('T')[0] : '',
           precioUnitarioPesos: bookData.precio ? String(Math.round(bookData.precio)) : '',
           cantidadInicial: itemInventory ? String(itemInventory.stock) : '0',

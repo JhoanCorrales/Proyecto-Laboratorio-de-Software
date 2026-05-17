@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { booksService } from '../../services/booksService';
+import { getLanguageName } from '../../lib/languageMap';
 
 export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBookAdded }) {
   const [formData, setFormData] = useState({
@@ -78,7 +79,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
         genero: doc.subject?.[0] || '',
         paginas: doc.number_of_pages_median ? String(doc.number_of_pages_median) : '',
         editorial: doc.publisher?.[0] || '',
-        idioma: doc.language?.[0] || '',
+        idioma: doc.language?.[0] ? getLanguageName(doc.language[0]) : '',
         portada_url: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : '',
       }));
       setSuggestions(parsedBooks);
