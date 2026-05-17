@@ -70,7 +70,8 @@ router.get("/", verifyToken, async (req, res) => {
          ci.precio_unitario,
          l.titulo,
          l.autor,
-         l.portada_url
+         l.portada_url,
+         l.stock_general as stock
        FROM carrito_items ci
        JOIN libros l ON ci.libro_id = l.id
        WHERE ci.carrito_id = $1

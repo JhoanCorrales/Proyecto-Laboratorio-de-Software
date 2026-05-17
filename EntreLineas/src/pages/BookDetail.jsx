@@ -219,6 +219,7 @@ function BookDetail() {
   const originalPrice = `$${Math.round(priceCOP * 1.2).toLocaleString("es-CO")}`;
   const rating = 4;
   const stock = Number(doc.stock_general || 0);
+  const isOutOfStock = stock === 0;
 
   const handleAddToCart = async () => {
     const user = getCurrentUser();
@@ -420,15 +421,21 @@ function BookDetail() {
 
                   {/* Botones */}
                   <div className="flex flex-col sm:flex-row gap-3">
+                    {isOutOfStock && (
+                      <div className="w-full bg-red-900/40 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm font-medium">
+                        <span className="material-symbols-outlined">info</span>
+                        Este libro está agotado
+                      </div>
+                    )}
                     <button
-                      className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                       onClick={handleAddToCart}
-                      disabled={addingToCart}
+                      disabled={addingToCart || isOutOfStock}
                     >
                       <span className="material-symbols-outlined">
                         {addingToCart ? "hourglass_empty" : "shopping_cart"}
                       </span>
-                      {addingToCart ? "Agregando..." : "Agregar al carrito"}
+                      {isOutOfStock ? "Agotado" : addingToCart ? "Agregando..." : "Agregar al carrito"}
                     </button>
                     <button
                       className="flex-1 bg-neutral-400 text-gray-600 font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60"

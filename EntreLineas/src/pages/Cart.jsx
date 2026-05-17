@@ -228,6 +228,7 @@ function Cart() {
   const iva = subtotal * IVA;
   const total = subtotal + iva;
   const totalItems = items.reduce((acc, i) => acc + i.cantidad, 0);
+  const hasOutOfStockItems = items.some(i => Number(i.stock || 0) === 0);
 
   return (
     <div className="bg-background-dark font-display text-slate-100 min-h-screen">
@@ -273,27 +274,43 @@ function Cart() {
                   {items.map((item) => {
                     const isBusy = updatingId === item.libro_id;
                     const precio = Number(item.precio_unitario);
+                    const isOutOfStock = Number(item.stock || 0) === 0;
                     return (
                       <div
                         key={item.libro_id}
                         className={`py-6 first:pt-0 last:pb-0 flex flex-col sm:flex-row gap-5 transition-opacity ${isBusy ? "opacity-60 pointer-events-none" : ""}`}
                       >
                         {/* Portada */}
-                        <div className="w-24 h-36 flex-shrink-0 bg-background-dark rounded-lg overflow-hidden border border-neutral-border shadow-md">
+                        <div className="w-24 h-36 flex-shrink-0 bg-background-dark rounded-lg overflow-hidden border border-neutral-border shadow-md relative">
                           <CartItemCover
                             titulo={item.titulo}
                             editorial={item.editorial}
                             portada_url={item.portada_url}
                           />
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <div className="text-center">
+                                <span className="material-symbols-outlined text-white text-2xl">block</span>
+                                <p className="text-white text-xs font-bold mt-1">Agotado</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Detalles */}
                         <div className="flex-grow flex flex-col justify-between">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="text-lg font-bold text-white leading-tight mb-1">
-                                {item.titulo}
-                              </h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-bold text-white leading-tight mb-1">
+                                  {item.titulo}
+                                </h3>
+                                {isOutOfStock && (
+                                  <span className="px-2 py-1 bg-red-900/60 border border-red-500/60 text-red-300 text-xs font-bold rounded">
+                                    Agotado
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-neutral-muted text-sm">{item.autor}</p>
                             </div>
                             <span className="text-xl font-bold text-primary ml-4 whitespace-nowrap">
@@ -303,13 +320,14 @@ function Cart() {
 
                           <div className="flex justify-between items-end mt-4">
                             {/* Selector de cantidad */}
-                            <div className="flex items-center bg-background-dark border border-neutral-border rounded-lg overflow-hidden">
+                            <div className={`flex items-center bg-background-dark border border-neutral-border rounded-lg overflow-hidden ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
                               <button
                                 onClick={() =>
                                   handleQuantityChange(item.libro_id, item.cantidad - 1)
                                 }
                                 className="px-3 py-2 hover:bg-neutral-border text-primary transition-colors"
                                 aria-label="Reducir cantidad"
+                                disabled={isOutOfStock}
                               >
                                 <span className="material-symbols-outlined text-lg leading-none">
                                   remove
@@ -322,9 +340,9 @@ function Cart() {
                                 onClick={() =>
                                   handleQuantityChange(item.libro_id, item.cantidad + 1)
                                 }
-                                disabled={item.cantidad >= MAX_QUANTITY}
+                                disabled={item.cantidad >= MAX_QUANTITY || isOutOfStock}
                                 className={`px-3 py-2 transition-colors ${
-                                  item.cantidad >= MAX_QUANTITY
+                                  item.cantidad >= MAX_QUANTITY || isOutOfStock
                                     ? "text-neutral-muted/50 cursor-not-allowed"
                                     : "hover:bg-neutral-border text-primary"
                                 }`}
@@ -339,8 +357,9 @@ function Cart() {
                             {/* Eliminar */}
                             <button
                               onClick={() => handleRemove(item.libro_id)}
-                              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors text-sm font-medium"
+                              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               aria-label="Eliminar libro"
+                              disabled={isOutOfStock}
                             >
                               <span className="material-symbols-outlined text-lg">delete</span>
                               Eliminar
@@ -413,9 +432,16 @@ function Cart() {
                   </div>
 
                   {/* CTA */}
+                  {hasOutOfStockItems && (
+                    <div className="w-full bg-red-900/40 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm font-medium">
+                      <span className="material-symbols-outlined">warning</span>
+                      No puedes comprar porque algunos libros están agotados
+                    </div>
+                  )}
                   <button
-                    className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(43,189,238,0.25)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                    className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(43,189,238,0.25)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => showToast("Próximamente: módulo de pago.", "success")}
+                    disabled={hasOutOfStockItems}
                   >
                     Continuar con el pago
                     <span className="material-symbols-outlined">arrow_forward</span>
