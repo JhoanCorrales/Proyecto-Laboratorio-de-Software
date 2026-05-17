@@ -9,35 +9,7 @@ function CategoryCard({ label, icon, color, img }) {
       return;
     }
 
-    const queryMap = {
-      "Ficción": "subject:fiction",
-      "Historia": "subject:history",
-      "Ciencia": "subject:science",
-      "Misterio": "subject:mystery",
-      "Romance": "subject:romance",
-      "No Ficción": "subject:nonfiction",
-      "Ciencia Ficción": "subject:science_fiction",
-      "Fantasía": "subject:fantasy",
-      "Autoayuda": "subject:self-help",
-      "Infantil": "subject:children",
-      "Thriller": "subject:thriller",
-      "Terror": "subject:horror",
-      "Biografías": "subject:biography",
-      "Filosofía": "subject:philosophy",
-      "Psicología": "subject:psychology",
-      "Juvenil": "subject:young_adult",
-      "Poesía": "subject:poetry",
-      "Drama": "subject:drama",
-      "Cómics": "subject:comics",
-      "Cocina": "subject:cooking",
-      "Viajes": "subject:travel",
-      "Arte": "subject:art",
-      "Tecnología": "subject:technology",
-      "Negocios": "subject:business",
-    };
-
-    const query = queryMap[label] ?? `subject:${label.toLowerCase()}`;
-    navigate(`/catalogue?cat=${encodeURIComponent(query)}`);
+    navigate(`/catalogue?cat=${encodeURIComponent(label)}`);
   };
 
   return (
