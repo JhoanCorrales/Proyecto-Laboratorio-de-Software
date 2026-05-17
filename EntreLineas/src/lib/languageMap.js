@@ -16,6 +16,7 @@ export const LANGUAGE_MAP = {
   'rus': 'Ruso',
   'ja': 'Japonés',
   'jpn': 'Japonés',
+  'chi': 'Chino',
   'zh': 'Chino',
   'zho': 'Chino',
   'zh-CN': 'Chino Simplificado',
