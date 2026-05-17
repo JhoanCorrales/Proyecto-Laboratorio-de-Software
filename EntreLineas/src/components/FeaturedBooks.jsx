@@ -58,20 +58,36 @@ function FeaturedBooks({ onAuthRequired }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchBooks = async (retryCount = 0, maxRetries = 5) => {
       try {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4003';
         const res = await fetch(`${baseUrl}/api/books/public?limit=5`);
+        
+        // Verificar si la respuesta fue exitosa
+        if (!res.ok) {
+          throw new Error(`Error HTTP: ${res.status} ${res.statusText}`);
+        }
+        
         const data = await res.json();
         
         const parsedBooks = await Promise.all((data.docs ?? []).map(parseBook));
         const parsed = parsedBooks.filter(Boolean);
         
         setBooks(parsed);
-      } catch (err) {
-        console.error("Error cargando libros destacados:", err);
-      } finally {
         setLoading(false);
+      } catch (err) {
+        console.error(`Error cargando libros destacados (intento ${retryCount + 1}/${maxRetries + 1}):`, err);
+        
+        if (retryCount < maxRetries) {
+          // Backoff exponencial: esperar antes de reintentar
+          const delayMs = Math.min(1000 * Math.pow(2, retryCount), 16000);
+          console.log(`Reintentando en ${delayMs}ms...`);
+          setTimeout(() => fetchBooks(retryCount + 1, maxRetries), delayMs);
+        } else {
+          // Si se agotan los reintentos, mostrar error
+          console.error("No se pudo cargar los libros después de múltiples intentos");
+          setLoading(false);
+        }
       }
     };
 
