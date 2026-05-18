@@ -76,3 +76,18 @@ export async function clearCart() {
   if (!res.ok) throw new Error(data.error || "Error al vaciar el carrito.");
   return data;
 }
+
+/**
+ * Realiza el checkout y crea una compra
+ * @param {{ metodo_pago: 'monedero' | 'tarjeta', tarjeta_id?: number }} checkoutData
+ */
+export async function checkout({ metodo_pago, tarjeta_id }) {
+  const res = await fetch(`${API_URL}/api/cart/checkout`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ metodo_pago, tarjeta_id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al procesar la compra.");
+  return data;
+}

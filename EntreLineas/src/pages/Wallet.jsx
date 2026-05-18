@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import WalletBalance from "../components/WalletBalance";
 import { getCards, deleteCard, setDefaultCard, getPurchases } from "../services/walletService";
 import {
   VisaIconOnly,
@@ -139,6 +140,20 @@ export default function Wallet() {
                     analytics
                   </span>
                   <span className="text-sm font-medium">Resumen</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveSection("monedero")}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                    activeSection === "monedero"
+                      ? "bg-primary/10 text-primary border-r-4 border-primary"
+                      : "text-neutral-muted hover:bg-neutral-accent/50"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    account_balance_wallet
+                  </span>
+                  <span className="text-sm font-medium">Monedero</span>
                 </button>
 
                 <button
@@ -392,6 +407,21 @@ export default function Wallet() {
                         )}
                       </div>
                     )}
+                  </section>
+                )}
+
+                {/* Monedero Section */}
+                {activeSection === "monedero" && (
+                  <section>
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary">
+                          account_balance_wallet
+                        </span>
+                        Mi Monedero
+                      </h3>
+                    </div>
+                    <WalletBalance />
                   </section>
                 )}
               </div>

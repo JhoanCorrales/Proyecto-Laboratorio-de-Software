@@ -72,3 +72,42 @@ export async function getPurchases() {
   if (!res.ok) throw new Error(data.error || "Error al obtener historial de compras.");
   return data.purchases;
 }
+
+/**
+ * Obtiene el saldo disponible del monedero del usuario
+ */
+export async function getWalletBalance() {
+  const res = await fetch(`${API_URL}/api/wallet/balance`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener saldo del monedero.");
+  return data.wallet;
+}
+
+/**
+ * Agrega fondos al monedero desde una tarjeta de crédito
+ * @param {{ monto, tarjetaId }} fundData
+ */
+export async function addFundsToWallet({ monto, tarjetaId }) {
+  const res = await fetch(`${API_URL}/api/wallet/add-funds`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ monto, tarjetaId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al agregar fondos al monedero.");
+  return data;
+}
+
+/**
+ * Obtiene el historial de transacciones del monedero
+ */
+export async function getWalletTransactions() {
+  const res = await fetch(`${API_URL}/api/wallet/wallet-transactions`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener historial de transacciones.");
+  return data.transactions;
+}

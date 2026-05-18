@@ -221,4 +221,177 @@ router.get("/purchases", verifyToken, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/wallet/balance
+// Obtiene el saldo disponible del monedero del usuario
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/balance", verifyToken, async (req, res) => {
+  try {
+    let result = await db.query(
+      `SELECT id, saldo_disponible, saldo_total_agregado, updated_at
+       FROM monedero
+       WHERE usuario_id = $1`,
+      [req.user.id]
+    );
+
+    // Si no existe monedero, crear uno
+    if (result.rows.length === 0) {
+      result = await db.query(
+        `INSERT INTO monedero (usuario_id, saldo_disponible, saldo_total_agregado)
+         VALUES ($1, 0.00, 0.00)
+         RETURNING id, saldo_disponible, saldo_total_agregado, updated_at`,
+        [req.user.id]
+      );
+    }
+
+    res.status(200).json({
+      wallet: result.rows[0],
+    });
+  } catch (err) {
+    console.error("Error fetching wallet balance:", err);
+    res.status(500).json({ error: "Error al obtener saldo del monedero" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/wallet/add-funds
+// Agrega dinero al monedero desde una tarjeta de crédito
+// Body: { monto, tarjetaId }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/add-funds", verifyToken, async (req, res) => {
+  const client = await db.connect();
+  
+  try {
+    const { monto, tarjetaId } = req.body;
+
+    // Validaciones
+    if (!monto || monto <= 0) {
+      return res.status(400).json({ error: "El monto debe ser mayor a 0" });
+    }
+
+    if (!tarjetaId) {
+      return res.status(400).json({ error: "Tarjeta requerida" });
+    }
+
+    // Verificar que la tarjeta pertenece al usuario
+    const tarjetaCheck = await client.query(
+      "SELECT id, estado FROM tarjetas_credito WHERE id = $1 AND usuario_id = $2",
+      [tarjetaId, req.user.id]
+    );
+
+    if (tarjetaCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Tarjeta no encontrada" });
+    }
+
+    if (tarjetaCheck.rows[0].estado !== "activa") {
+      return res.status(400).json({ error: "La tarjeta no está activa" });
+    }
+
+    await client.query("BEGIN");
+
+    // Obtener o crear monedero
+    let walletCheck = await client.query(
+      "SELECT id, saldo_disponible FROM monedero WHERE usuario_id = $1",
+      [req.user.id]
+    );
+
+    let walletId;
+    let saldoAnterior = 0;
+
+    if (walletCheck.rows.length === 0) {
+      const walletCreate = await client.query(
+        `INSERT INTO monedero (usuario_id, saldo_disponible, saldo_total_agregado)
+         VALUES ($1, $2, $2)
+         RETURNING id, saldo_disponible`,
+        [req.user.id, monto]
+      );
+      walletId = walletCreate.rows[0].id;
+      saldoAnterior = 0;
+    } else {
+      walletId = walletCheck.rows[0].id;
+      saldoAnterior = walletCheck.rows[0].saldo_disponible;
+
+      // Actualizar saldo
+      await client.query(
+        `UPDATE monedero 
+         SET saldo_disponible = saldo_disponible + $1,
+             saldo_total_agregado = saldo_total_agregado + $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [monto, walletId]
+      );
+    }
+
+    // Registrar transacción
+    const referenciaTransaccion = `WLT-${req.user.id}-${Date.now()}`;
+    await client.query(
+      `INSERT INTO transacciones_monedero 
+       (usuario_id, tipo_transaccion, monto, saldo_anterior, saldo_nuevo, 
+        referencia_pago, tarjeta_id, descripcion)
+       VALUES ($1, 'agregar_fondos', $2, $3, $4, $5, $6, $7)`,
+      [
+        req.user.id,
+        monto,
+        saldoAnterior,
+        saldoAnterior + monto,
+        referenciaTransaccion,
+        tarjetaId,
+        `Fondos agregados desde tarjeta`,
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    // Obtener saldo actualizado
+    const walletActualizado = await db.query(
+      `SELECT saldo_disponible, saldo_total_agregado, updated_at FROM monedero WHERE id = $1`,
+      [walletId]
+    );
+
+    res.status(201).json({
+      message: "Fondos agregados exitosamente",
+      wallet: walletActualizado.rows[0],
+      referencia: referenciaTransaccion,
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error adding funds:", err);
+    res.status(500).json({ error: "Error al agregar fondos al monedero" });
+  } finally {
+    client.release();
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/wallet/wallet-transactions
+// Obtiene el historial de transacciones del monedero
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/wallet-transactions", verifyToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT 
+         id,
+         tipo_transaccion,
+         monto,
+         saldo_anterior,
+         saldo_nuevo,
+         referencia_pago,
+         descripcion,
+         created_at
+       FROM transacciones_monedero
+       WHERE usuario_id = $1
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [req.user.id]
+    );
+
+    res.status(200).json({
+      transactions: result.rows || [],
+    });
+  } catch (err) {
+    console.error("Error fetching wallet transactions:", err);
+    res.status(500).json({ error: "Error al obtener historial de transacciones" });
+  }
+});
+
 export default router;

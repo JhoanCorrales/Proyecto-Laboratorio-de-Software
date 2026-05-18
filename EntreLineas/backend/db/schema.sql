@@ -526,3 +526,44 @@ INSERT INTO categorias (nombre, descripcion) VALUES
   ('Arte', 'Libros sobre artes visuales y expresión artística'),
   ('Tecnología', 'Libros sobre tecnología e innovación'),
   ('Negocios', 'Libros de emprendimiento, economía y negocios');
+
+
+-- ============================================================================
+-- 20. TABLA DE MONEDERO (Wallet/Saldo disponible)
+-- ============================================================================
+CREATE TABLE monedero (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL UNIQUE,
+    saldo_disponible DECIMAL(10, 2) NOT NULL DEFAULT 0.00 CHECK (saldo_disponible >= 0),
+    saldo_total_agregado DECIMAL(10, 2) NOT NULL DEFAULT 0.00 CHECK (saldo_total_agregado >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_monedero_usuario_id ON monedero(usuario_id);
+
+
+-- ============================================================================
+-- 21. TABLA DE TRANSACCIONES DE MONEDERO
+-- ============================================================================
+CREATE TABLE transacciones_monedero (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL,
+    tipo_transaccion VARCHAR(50) NOT NULL CHECK (tipo_transaccion IN ('agregar_fondos', 'compra', 'reembolso')),
+    monto DECIMAL(10, 2) NOT NULL CHECK (monto > 0),
+    saldo_anterior DECIMAL(10, 2),
+    saldo_nuevo DECIMAL(10, 2),
+    referencia_pago VARCHAR(100),
+    tarjeta_id INTEGER,
+    compra_id INTEGER,
+    descripcion TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (tarjeta_id) REFERENCES tarjetas_credito(id) ON DELETE SET NULL,
+    FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_transacciones_monedero_usuario_id ON transacciones_monedero(usuario_id);
+CREATE INDEX idx_transacciones_monedero_tipo ON transacciones_monedero(tipo_transaccion);
+CREATE INDEX idx_transacciones_monedero_fecha ON transacciones_monedero(created_at);
