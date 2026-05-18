@@ -260,13 +260,7 @@ export default function WalletBalance() {
                       Fecha
                     </th>
                     <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-medium">
-                      Tipo
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-medium">
                       Monto
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-medium">
-                      Saldo
                     </th>
                   </tr>
                 </thead>
@@ -276,27 +270,8 @@ export default function WalletBalance() {
                       <td className="px-6 py-4 text-slate-100">
                         {new Date(transaction.created_at).toLocaleDateString("es-CO")}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                          transaction.tipo_transaccion === "agregar_fondos"
-                            ? "bg-green-500/20 text-green-400"
-                            : transaction.tipo_transaccion === "compra"
-                            ? "bg-red-500/20 text-red-400"
-                            : "bg-blue-500/20 text-blue-400"
-                        }`}>
-                          {transaction.tipo_transaccion === "agregar_fondos" && "➕ Agregar"}
-                          {transaction.tipo_transaccion === "compra" && "💳 Compra"}
-                          {transaction.tipo_transaccion === "reembolso" && "↩️ Reembolso"}
-                        </span>
-                      </td>
                       <td className="px-6 py-4 text-slate-100 font-medium">
                         ${transaction.monto.toLocaleString("es-CO", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="px-6 py-4 text-slate-100">
-                        ${transaction.saldo_nuevo.toLocaleString("es-CO", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
