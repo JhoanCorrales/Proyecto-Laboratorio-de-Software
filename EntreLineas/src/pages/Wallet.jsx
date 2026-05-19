@@ -31,6 +31,7 @@ export default function Wallet() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+  const [deletingCardId, setDeletingCardId] = useState(null);
   const retryIntervalRef = useRef(null);
 
   const cardsPerPage = 2;
@@ -88,11 +89,26 @@ export default function Wallet() {
 
   const handleDeleteCard = async (cardId) => {
     if (confirm("¿Estás seguro de que deseas eliminar esta tarjeta?")) {
+      setDeletingCardId(cardId);
       try {
+        console.log("Iniciando eliminación de tarjeta:", cardId);
         await deleteCard(cardId);
+        console.log("Tarjeta eliminada exitosamente");
         setCards((prev) => prev.filter((card) => card.id !== cardId));
+        setError(""); // Limpiar error si la eliminación es exitosa
+        // Resetear a la página anterior si es necesario
+        if (currentPage > 0 && (currentPage * cardsPerPage) >= cards.length - 1) {
+          setCurrentPage(Math.max(0, currentPage - 1));
+        }
+        // Mostrar mensaje de éxito
+        alert("✅ Tarjeta eliminada exitosamente");
       } catch (err) {
-        setError(err.message || "Error al eliminar tarjeta");
+        console.error("Error al eliminar tarjeta:", err);
+        const errorMsg = err.message || "Error al eliminar tarjeta";
+        setError(errorMsg);
+        alert(`❌ ${errorMsg}`);
+      } finally {
+        setDeletingCardId(null);
       }
     }
   };
@@ -361,10 +377,16 @@ export default function Wallet() {
                                     )}
                                     <button
                                       onClick={() => handleDeleteCard(card.id)}
-                                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-lg transition-colors active:scale-95"
+                                      disabled={deletingCardId === card.id}
+                                      className={`p-2 rounded-lg transition-all ${
+                                        deletingCardId === card.id
+                                          ? "text-red-600/50 cursor-not-allowed"
+                                          : "text-red-400 hover:text-red-300 hover:bg-red-400/10 active:scale-95"
+                                      }`}
+                                      title={deletingCardId === card.id ? "Eliminando..." : "Eliminar tarjeta"}
                                     >
                                       <span className="material-symbols-outlined text-xl">
-                                        delete
+                                        {deletingCardId === card.id ? "hourglass_empty" : "delete"}
                                       </span>
                                     </button>
                                   </div>

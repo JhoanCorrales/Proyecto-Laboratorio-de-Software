@@ -39,11 +39,19 @@ export async function addCard({ numeroTarjeta, titular, fechaExpiracion, tipoTar
  * Elimina una tarjeta de crédito
  */
 export async function deleteCard(cardId) {
+  const token = localStorage.getItem("token");
+  console.log("Token guardado:", token ? "✅ Presente" : "❌ No encontrado");
+  console.log("Card ID:", cardId);
+  
   const res = await fetch(`${API_URL}/api/wallet/cards/${cardId}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
+  
+  console.log("Response status:", res.status);
   const data = await res.json();
+  console.log("Response data:", data);
+  
   if (!res.ok) throw new Error(data.error || "Error al eliminar tarjeta.");
   return data;
 }
