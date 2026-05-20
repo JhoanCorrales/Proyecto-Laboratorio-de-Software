@@ -372,7 +372,7 @@ function Checkout() {
 
               {deliveryMethod === "pickup" && (
                 <div className="space-y-4">
-                  <label className="block text-sm font-medium text-neutral-muted">Seleccionar tienda</label>
+                  <label className="block text-sm font-medium text-neutral-muted">Seleccionar tienda de recogida</label>
                   <select 
                     value={selectedStore}
                     onChange={(e) => setSelectedStore(e.target.value)}
@@ -385,6 +385,15 @@ function Checkout() {
                       </option>
                     ))}
                   </select>
+                  
+                  {/* Info message */}
+                  <div className="p-4 bg-blue-900/40 border border-blue-500/40 rounded-lg flex items-start gap-3">
+                    <span className="material-symbols-outlined text-blue-300 flex-shrink-0 mt-0.5">info</span>
+                    <div className="text-blue-200 text-sm">
+                      <p className="font-semibold mb-1">¿Cómo funciona la recogida en tienda?</p>
+                      <p>Tus libros serán enviados a la tienda que selecciones. Podrás recogerlos allí sin importar su disponibilidad inicial. Te notificaremos cuando estén listos para recoger.</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
