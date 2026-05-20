@@ -165,16 +165,28 @@ function Checkout() {
 
         // Get stores
         const storesList = await getStores();
-        const tiendas = Array.isArray(storesList)
-          ? storesList
-          : Array.isArray(storesList.tiendas)
-            ? storesList.tiendas
-            : [];
 
+        console.log("storesList RAW:", storesList);
+
+        const tiendas =
+          Array.isArray(storesList)
+            ? storesList
+            : Array.isArray(storesList?.tiendas)
+              ? storesList.tiendas
+              : Array.isArray(storesList?.data)
+                ? storesList.data
+                : Array.isArray(storesList?.stores)
+                  ? storesList.stores
+                  : [];
+
+        // guardar en estado
         setStores(tiendas);
 
+        // seleccionar primera tienda si existe
         if (tiendas.length > 0) {
           setSelectedStore(tiendas[0].id);
+        } else {
+          setSelectedStore("");
         }
       } catch (err) {
         console.error("Error loading checkout data:", err);
