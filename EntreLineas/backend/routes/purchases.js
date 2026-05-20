@@ -52,8 +52,10 @@ router.get("/:compraId", verifyToken, async (req, res) => {
     // Validar que la compra pertenece al usuario
     const compraResult = await db.query(
       `SELECT c.id, c.usuario_id, c.fecha, c.total, c.estado_compra, 
-              c.metodo_pago, c.numero_seguimiento, c.fecha_entrega_estimada, c.created_at
+              c.metodo_pago, c.numero_seguimiento, c.fecha_entrega_estimada, c.created_at,
+              c.tipo_entrega, c.tienda_id, c.direccion_envio, t.nombre as tienda_nombre, t.direccion as tienda_direccion
        FROM compras c
+       LEFT JOIN tiendas t ON c.tienda_id = t.id
        WHERE c.id = $1 AND c.usuario_id = $2`,
       [compraId, req.user.id]
     );
@@ -132,17 +134,39 @@ router.post("/:compraId/cancel", verifyToken, async (req, res) => {
 
     // 2. Obtener items de la compra para restaurar stock
     const itemsResult = await client.query(
-      `SELECT libro_id, cantidad FROM compra_items WHERE compra_id = $1`,
+      `SELECT libro_id, cantidad, tienda_id FROM compra_items WHERE compra_id = $1`,
       [compraId]
     );
 
     // 3. Restaurar stock
     for (const item of itemsResult.rows) {
-      await client.query(
-        `UPDATE libros SET stock_general = stock_general + $1
-         WHERE id = $2`,
-        [item.cantidad, item.libro_id]
-      );
+      if (item.tienda_id) {
+        // Verificar si existe la relación en inventario_tienda
+        const invCheck = await client.query(
+          `SELECT id FROM inventario_tienda WHERE tienda_id = $1 AND libro_id = $2`,
+          [item.tienda_id, item.libro_id]
+        );
+
+        if (invCheck.rows.length > 0) {
+          // Si existe, sumamos al stock de la tienda
+          await client.query(
+            `UPDATE inventario_tienda 
+             SET cantidad_disponible = cantidad_disponible + $1, updated_at = NOW()
+             WHERE tienda_id = $2 AND libro_id = $3`,
+            [item.cantidad, item.tienda_id, item.libro_id]
+          );
+        } else {
+          // Si no existe, creamos el registro
+          await client.query(
+            `INSERT INTO inventario_tienda (tienda_id, libro_id, cantidad_disponible, ultimo_reabastecimiento)
+             VALUES ($1, $2, $3, NOW())`,
+            [item.tienda_id, item.libro_id, item.cantidad]
+          );
+        }
+      }
+
+      // Sincronizar el stock global de este libro
+      await db.updateGlobalStock(item.libro_id, client);
     }
 
     // 4. Actualizar estado de la compra

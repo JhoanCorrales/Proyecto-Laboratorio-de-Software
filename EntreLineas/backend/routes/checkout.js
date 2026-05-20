@@ -37,7 +37,7 @@ router.post("/purchase", verifyToken, async (req, res) => {
 
     // 2. Obtener items del carrito
     const cartItemsResult = await client.query(
-      `SELECT ci.libro_id, ci.cantidad, ci.precio_unitario, l.stock_general
+      `SELECT ci.libro_id, ci.cantidad, ci.precio_unitario, l.stock_general, l.titulo
        FROM carrito_items ci
        JOIN libros l ON ci.libro_id = l.id
        WHERE ci.carrito_id = $1`,
@@ -52,12 +52,34 @@ router.post("/purchase", verifyToken, async (req, res) => {
     }
 
     // 3. Validar stock disponible
+    const storeId = deliveryMethod === "pickup" ? (shippingAddress ? shippingAddress.storeId : null) : null;
+    if (deliveryMethod === "pickup" && !storeId) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Debe seleccionar una tienda para la recogida" });
+    }
+
     for (const item of cartItems) {
-      if (item.stock_general < item.cantidad) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          error: `Stock insuficiente para un libro en tu carrito. Disponible: ${item.stock_general}, solicitado: ${item.cantidad}`,
-        });
+      if (deliveryMethod === "pickup") {
+        // Recogida en tienda: Validar stock de esa tienda física
+        const storeStockResult = await client.query(
+          `SELECT cantidad_disponible FROM inventario_tienda WHERE tienda_id = $1 AND libro_id = $2`,
+          [storeId, item.libro_id]
+        );
+        const storeStock = storeStockResult.rows.length > 0 ? storeStockResult.rows[0].cantidad_disponible : 0;
+        if (storeStock < item.cantidad) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            error: `Stock insuficiente en la tienda seleccionada para "${item.titulo}". Disponible: ${storeStock}, solicitado: ${item.cantidad}`,
+          });
+        }
+      } else {
+        // Envío a domicilio: Validar stock general
+        if (item.stock_general < item.cantidad) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            error: `Stock general insuficiente para "${item.titulo}". Disponible: ${item.stock_general}, solicitado: ${item.cantidad}`,
+          });
+        }
       }
     }
 
@@ -95,37 +117,152 @@ router.post("/purchase", verifyToken, async (req, res) => {
       }
     }
 
-    // 6. Crear compra
+    // 6. Crear compra con detalles de entrega
+    const tipoEntrega = deliveryMethod === "pickup" ? "recogida" : "domicilio";
+    const formattedAddress = deliveryMethod === "home" && shippingAddress
+      ? `${shippingAddress.name || ''} - ${shippingAddress.address || ''}, ${shippingAddress.city || ''}`.trim()
+      : null;
+
     const compraResult = await client.query(
-      `INSERT INTO compras (usuario_id, total, estado_compra, metodo_pago)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO compras (usuario_id, total, estado_compra, metodo_pago, tipo_entrega, tienda_id, direccion_envio)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [userId, total, "confirmada", paymentMethod]
+      [
+        userId,
+        total,
+        "confirmada",
+        paymentMethod,
+        tipoEntrega,
+        deliveryMethod === "pickup" ? storeId : null,
+        formattedAddress
+      ]
     );
 
     const compraId = compraResult.rows[0].id;
 
-    // 7. Crear items de compra y reducir stock
+    // 7. Crear items de compra y reducir stock según tipo de entrega
     for (const item of cartItems) {
-      // Insertar en compra_items
-      await client.query(
-        `INSERT INTO compra_items (compra_id, libro_id, cantidad, precio_unitario, subtotal)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          compraId,
-          item.libro_id,
-          item.cantidad,
-          item.precio_unitario,
-          parseFloat(item.precio_unitario) * item.cantidad,
-        ]
-      );
+      if (deliveryMethod === "pickup") {
+        // A. Reducir stock de la tienda seleccionada
+        await client.query(
+          `UPDATE inventario_tienda 
+           SET cantidad_disponible = cantidad_disponible - $1, updated_at = NOW()
+           WHERE tienda_id = $2 AND libro_id = $3`,
+          [item.cantidad, storeId, item.libro_id]
+        );
 
-      // Reducir stock
-      await client.query(
-        `UPDATE libros SET stock_general = stock_general - $1
-         WHERE id = $2`,
-        [item.cantidad, item.libro_id]
-      );
+        // B. Crear registro en compra_items con tienda_id
+        await client.query(
+          `INSERT INTO compra_items (compra_id, libro_id, cantidad, precio_unitario, subtotal, tienda_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            compraId,
+            item.libro_id,
+            item.cantidad,
+            item.precio_unitario,
+            parseFloat(item.precio_unitario) * item.cantidad,
+            storeId,
+          ]
+        );
+
+        // C. Sincronizar stock global
+        await db.updateGlobalStock(item.libro_id, client);
+
+      } else {
+        // Envío a Domicilio: Buscar tienda(s) con disponibilidad
+        // Primero intentamos buscar una sola tienda que tenga el stock completo
+        const availableStoresResult = await client.query(
+          `SELECT tienda_id, cantidad_disponible 
+           FROM inventario_tienda 
+           WHERE libro_id = $1 AND cantidad_disponible >= $2`,
+          [item.libro_id, item.cantidad]
+        );
+
+        if (availableStoresResult.rows.length > 0) {
+          // Si hay tiendas con suficiente stock, elegimos una aleatoria
+          const randomIndex = Math.floor(Math.random() * availableStoresResult.rows.length);
+          const chosenStoreId = availableStoresResult.rows[randomIndex].tienda_id;
+
+          // A. Reducir stock de la tienda seleccionada
+          await client.query(
+            `UPDATE inventario_tienda 
+             SET cantidad_disponible = cantidad_disponible - $1, updated_at = NOW()
+             WHERE tienda_id = $2 AND libro_id = $3`,
+            [item.cantidad, chosenStoreId, item.libro_id]
+          );
+
+          // B. Insertar en compra_items
+          await client.query(
+            `INSERT INTO compra_items (compra_id, libro_id, cantidad, precio_unitario, subtotal, tienda_id)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              compraId,
+              item.libro_id,
+              item.cantidad,
+              item.precio_unitario,
+              parseFloat(item.precio_unitario) * item.cantidad,
+              chosenStoreId,
+            ]
+          );
+
+          // C. Sincronizar stock global
+          await db.updateGlobalStock(item.libro_id, client);
+
+        } else {
+          // Si ninguna tienda tiene stock suficiente individual, dividimos el stock
+          // Obtener tiendas con stock > 0
+          const partialStoresResult = await client.query(
+            `SELECT tienda_id, cantidad_disponible 
+             FROM inventario_tienda 
+             WHERE libro_id = $1 AND cantidad_disponible > 0 
+             ORDER BY cantidad_disponible DESC`,
+            [item.libro_id]
+          );
+
+          let remaining = item.cantidad;
+          const fulfillments = [];
+
+          for (const storeRow of partialStoresResult.rows) {
+            const take = Math.min(remaining, storeRow.cantidad_disponible);
+            fulfillments.push({ storeId: storeRow.tienda_id, qty: take });
+            remaining -= take;
+            if (remaining === 0) break;
+          }
+
+          if (remaining > 0) {
+            await client.query("ROLLBACK");
+            return res.status(400).json({
+              error: `No hay suficiente stock físico disponible en las tiendas para el despacho de "${item.titulo}"`,
+            });
+          }
+
+          // Aplicar la reducción y registrar los compra_items correspondientes
+          for (const f of fulfillments) {
+            await client.query(
+              `UPDATE inventario_tienda 
+               SET cantidad_disponible = cantidad_disponible - $1, updated_at = NOW()
+               WHERE tienda_id = $2 AND libro_id = $3`,
+              [f.qty, f.storeId, item.libro_id]
+            );
+
+            await client.query(
+              `INSERT INTO compra_items (compra_id, libro_id, cantidad, precio_unitario, subtotal, tienda_id)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              [
+                compraId,
+                item.libro_id,
+                f.qty,
+                item.precio_unitario,
+                parseFloat(item.precio_unitario) * f.qty,
+                f.storeId,
+              ]
+            );
+          }
+
+          // C. Sincronizar stock global
+          await db.updateGlobalStock(item.libro_id, client);
+        }
+      }
     }
 
     // 8. Procesar pago con wallet

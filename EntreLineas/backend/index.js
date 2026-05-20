@@ -101,7 +101,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error", message: err.message });
 });
 
-app.listen(port, () => {
-  console.log(`Backend listening on http://localhost:${port}`);
-  console.log(`Database: ${process.env.PGDATABASE} @ ${process.env.PGHOST}:${process.env.PGPORT}`);
+// Run database migrations and then start the server
+db.runMigrations().then(() => {
+  app.listen(port, () => {
+    console.log(`Backend listening on http://localhost:${port}`);
+  });
+}).catch((err) => {
+  console.error("Critical error starting backend:", err);
 });

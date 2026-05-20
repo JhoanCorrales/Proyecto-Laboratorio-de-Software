@@ -10,35 +10,9 @@ const router = Router();
  */
 async function updateGlobalStock(libroId) {
   try {
-    const bookResult = await db.query(`SELECT titulo FROM libros WHERE id = $1`, [libroId]);
-    if (bookResult.rows.length === 0) return;
-    
-    const titulo = bookResult.rows[0].titulo;
-    const normalizedTitulo = titulo.replace(/\s+/g, '').toLowerCase();
-
-    await db.query(`
-      WITH matching_books AS (
-        SELECT id
-        FROM libros
-        WHERE REGEXP_REPLACE(LOWER(titulo), '\\s+', '', 'g') = $1
-      ),
-      total_stock AS (
-        SELECT COALESCE(SUM(it.cantidad_disponible), 0) as stock_total
-        FROM inventario_tienda it
-        WHERE it.libro_id IN (SELECT id FROM matching_books)
-      )
-      UPDATE libros 
-      SET 
-        stock_general = (SELECT stock_total FROM total_stock),
-        estado = CASE 
-                   WHEN (SELECT stock_total FROM total_stock) > 0 THEN 'disponible' 
-                   ELSE 'agotado' 
-                 END,
-        updated_at = NOW()
-      WHERE id IN (SELECT id FROM matching_books)
-    `, [normalizedTitulo]);
+    await db.updateGlobalStock(libroId);
   } catch (error) {
-    console.error("Error al actualizar el stock global del libro:", error);
+    console.error("Error in stores.js updateGlobalStock delegator:", error);
   }
 }
 

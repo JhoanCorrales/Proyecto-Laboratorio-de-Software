@@ -121,6 +121,27 @@ function PurchaseDetailModal({ purchaseId, isOpen, onClose, onCancel }) {
               </div>
             </div>
 
+            {/* Detalles de entrega */}
+            {detail.tipo_entrega && (
+              <div className="bg-background-dark/30 rounded-lg p-4 space-y-2 border border-neutral-border/20 text-sm">
+                <p className="text-white font-bold text-base mb-1">Información de entrega</p>
+                {detail.tipo_entrega === "recogida" ? (
+                  <div className="space-y-1 text-neutral-muted">
+                    <p>Método: <span className="text-white font-semibold">Recogida en tienda</span></p>
+                    <p>Tienda: <span className="text-white font-semibold">{detail.tienda_nombre || `Tienda #${detail.tienda_id}`}</span></p>
+                    {detail.tienda_direccion && (
+                      <p>Dirección: <span className="text-white font-semibold">{detail.tienda_direccion}</span></p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-neutral-muted">
+                    <p>Método: <span className="text-white font-semibold">Envío a domicilio</span></p>
+                    <p>Dirección: <span className="text-white font-semibold">{detail.direccion_envio || "Dirección no especificada"}</span></p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Items */}
             <div className="space-y-3">
               <h4 className="text-white font-bold">Artículos</h4>
