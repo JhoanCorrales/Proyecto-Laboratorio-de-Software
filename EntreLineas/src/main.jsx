@@ -13,6 +13,8 @@ import Catalogue from './pages/Catalogue.jsx'
 import BookDetail from './pages/BookDetail.jsx'
 import Categories from './pages/Categories.jsx'
 import Cart from './pages/Cart.jsx'
+import Checkout from './pages/Checkout.jsx'
+import PurchaseHistory from './pages/PurchaseHistory.jsx'
 import RoleManagement from './pages/RoleManagement.jsx'
 import AddPaymentMethod from './pages/AddPaymentMethod.jsx'
 import Wallet from './pages/Wallet.jsx'
@@ -62,6 +64,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Cart />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/checkout",
+    element: (
+      <ProtectedRoute>
+        <Checkout />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/purchases",
+    element: (
+      <ProtectedRoute>
+        <PurchaseHistory />
       </ProtectedRoute>
     ),
   },

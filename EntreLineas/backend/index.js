@@ -6,6 +6,8 @@ import cartRouter from "./routes/cart.js";
 import walletRouter from "./routes/wallet.js";
 import storesRouter from "./routes/stores.js";
 import booksRouter from "./routes/books.js";
+import checkoutRouter from "./routes/checkout.js";
+import purchasesRouter from "./routes/purchases.js";
 
 dotenv.config();
 
@@ -81,6 +83,12 @@ app.use("/api/stores", storesRouter);
 
 // Books routes
 app.use("/api/books", booksRouter);
+
+// Checkout routes
+app.use("/api/checkout", checkoutRouter);
+
+// Purchases routes
+app.use("/api/purchases", purchasesRouter);
 
 // 404 handler
 app.use((req, res) => {

@@ -21,4 +21,7 @@ pool.on("error", (err) => {
   process.exit(-1);
 });
 
-export default pool;
+export default {
+  query: (text, params) => pool.query(text, params),
+  getClient: () => pool.connect(),
+};

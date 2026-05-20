@@ -440,7 +440,7 @@ function Cart() {
                   )}
                   <button
                     className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(43,189,238,0.25)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
-                    onClick={() => showToast("Próximamente: módulo de pago.", "success")}
+                    onClick={() => navigate("/checkout")}
                     disabled={hasOutOfStockItems}
                   >
                     Continuar con el pago
