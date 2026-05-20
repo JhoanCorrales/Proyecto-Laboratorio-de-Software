@@ -260,24 +260,53 @@ export default function WalletBalance() {
                       Fecha
                     </th>
                     <th className="px-6 py-4 text-left text-xs uppercase tracking-widest text-neutral-muted font-medium">
+                      Tipo
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs uppercase tracking-widest text-neutral-muted font-medium">
                       Monto
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-border/20">
-                  {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-neutral-accent/20 transition-colors">
-                      <td className="px-6 py-4 text-slate-100">
-                        {new Date(transaction.created_at).toLocaleDateString("es-CO")}
-                      </td>
-                      <td className="px-6 py-4 text-slate-100 font-medium">
-                        ${transaction.monto.toLocaleString("es-CO", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                    </tr>
-                  ))}
+                  {transactions.map((transaction) => {
+                    const isIngreso = transaction.tipo_transaccion === "ingreso" || transaction.tipo_transaccion === "recarga";
+                    const isEgreso = transaction.tipo_transaccion === "egreso" || transaction.tipo_transaccion === "compra";
+                    
+                    return (
+                      <tr key={transaction.id} className="hover:bg-neutral-accent/20 transition-colors">
+                        <td className="px-6 py-4 text-slate-100">
+                          {new Date(transaction.created_at).toLocaleDateString("es-CO")}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
+                            isIngreso 
+                              ? "bg-green-900/30 text-green-400 border border-green-600/30" 
+                              : isEgreso 
+                              ? "bg-red-900/30 text-red-400 border border-red-600/30"
+                              : "bg-blue-900/30 text-blue-400 border border-blue-600/30"
+                          }`}>
+                            <span className="material-symbols-outlined text-sm">
+                              {isIngreso ? "add_circle" : isEgreso ? "remove_circle" : "swap_horiz"}
+                            </span>
+                            {transaction.tipo_transaccion === "ingreso" || transaction.tipo_transaccion === "recarga"
+                              ? "Ingreso"
+                              : transaction.tipo_transaccion === "egreso" || transaction.tipo_transaccion === "compra"
+                              ? "Egreso"
+                              : "Transferencia"
+                            }
+                          </span>
+                        </td>
+                        <td className={`px-6 py-4 text-right font-bold ${
+                          isIngreso ? "text-green-400" : isEgreso ? "text-red-400" : "text-slate-100"
+                        }`}>
+                          {isIngreso ? "+" : isEgreso ? "-" : ""}${transaction.monto.toLocaleString("es-CO", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
