@@ -152,7 +152,6 @@ function Cart() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null); // libro_id en proceso
   const [toast, setToast] = useState({ message: "", type: "success" });
-  const [coupon, setCoupon] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const showToast = (message, type = "success") => {
@@ -379,94 +378,53 @@ function Cart() {
               </div>
             </div>
 
-            {/* ── Resumen de compra ── */}
+            {/* ── Carrito flotante ── */}
             <aside className="sticky top-24">
-              <div className="bg-neutral-dark border border-neutral-border rounded-2xl p-8 shadow-2xl">
-                <h2 className="text-xl font-bold text-white mb-6">Resumen de compra</h2>
-
-                {/* Desglose */}
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between text-neutral-muted text-sm">
-                    <span>
-                      Subtotal ({totalItems} {totalItems === 1 ? "producto" : "productos"})
-                    </span>
-                    <span className="text-white font-medium">
-                      ${subtotal.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-neutral-muted text-sm">
-                    <span>Gastos de envío</span>
-                    <span className="text-green-400 font-medium">Gratis</span>
-                  </div>
-                  <div className="flex justify-between text-neutral-muted text-sm">
-                    <span>Impuestos (IVA 19%)</span>
-                    <span className="text-white font-medium">
-                      ${iva.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
-                    </span>
-                  </div>
-                  <div className="pt-4 border-t border-neutral-border flex justify-between items-center">
-                    <span className="text-lg font-bold text-white">Total</span>
-                    <span className="text-3xl font-bold text-primary">
-                      ${total.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
-                    </span>
-                  </div>
+              <div className="bg-neutral-dark border border-neutral-border rounded-2xl p-8 shadow-2xl space-y-6">
+                {/* Total */}
+                <div className="space-y-2">
+                  <p className="text-neutral-muted text-sm">Total a pagar</p>
+                  <p className="text-4xl font-black text-primary">
+                    ${total.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
+                  </p>
                 </div>
 
-                {/* Cupón */}
-                <div className="space-y-4">
-                  <div className="relative">
-                    <input
-                      className="w-full bg-background-dark border border-neutral-border rounded-lg px-4 py-3 text-sm text-white placeholder-neutral-muted focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pr-20"
-                      placeholder="Código de descuento"
-                      type="text"
-                      value={coupon}
-                      onChange={(e) => setCoupon(e.target.value)}
-                    />
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neutral-border text-neutral-muted text-xs font-bold rounded hover:bg-neutral-border/80 transition-all"
-                      onClick={() => showToast("Código no válido o no disponible.", "error")}
-                    >
-                      Aplicar
-                    </button>
+                {/* CTA */}
+                {hasOutOfStockItems && (
+                  <div className="w-full bg-red-900/40 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm font-medium">
+                    <span className="material-symbols-outlined">warning</span>
+                    No puedes comprar porque algunos libros están agotados
                   </div>
+                )}
+                <button
+                  className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(43,189,238,0.25)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
+                  onClick={() => navigate("/checkout")}
+                  disabled={hasOutOfStockItems}
+                >
+                  Continuar con el pago
+                  <span className="material-symbols-outlined">arrow_forward</span>
+                </button>
 
-                  {/* CTA */}
-                  {hasOutOfStockItems && (
-                    <div className="w-full bg-red-900/40 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm font-medium">
-                      <span className="material-symbols-outlined">warning</span>
-                      No puedes comprar porque algunos libros están agotados
-                    </div>
-                  )}
-                  <button
-                    className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(43,189,238,0.25)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
-                    onClick={() => navigate("/checkout")}
-                    disabled={hasOutOfStockItems}
+                {/* Métodos de pago */}
+                <div className="mt-6 flex items-center justify-center gap-5 opacity-40">
+                  <span
+                    className="material-symbols-outlined text-3xl text-neutral-muted"
+                    title="Tarjeta de crédito"
                   >
-                    Continuar con el pago
-                    <span className="material-symbols-outlined">arrow_forward</span>
-                  </button>
-
-                  {/* Métodos de pago */}
-                  <div className="mt-6 flex items-center justify-center gap-5 opacity-40">
-                    <span
-                      className="material-symbols-outlined text-3xl text-neutral-muted"
-                      title="Tarjeta de crédito"
-                    >
-                      credit_card
-                    </span>
-                    <span
-                      className="material-symbols-outlined text-3xl text-neutral-muted"
-                      title="Billetera digital"
-                    >
-                      account_balance_wallet
-                    </span>
-                    <span
-                      className="material-symbols-outlined text-3xl text-neutral-muted"
-                      title="Pago sin contacto"
-                    >
-                      contactless
-                    </span>
-                  </div>
+                    credit_card
+                  </span>
+                  <span
+                    className="material-symbols-outlined text-3xl text-neutral-muted"
+                    title="Billetera digital"
+                  >
+                    account_balance_wallet
+                  </span>
+                  <span
+                    className="material-symbols-outlined text-3xl text-neutral-muted"
+                    title="Pago sin contacto"
+                  >
+                    contactless
+                  </span>
                 </div>
               </div>
             </aside>
