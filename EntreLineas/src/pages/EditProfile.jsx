@@ -76,6 +76,7 @@ function EditProfile() {
     setPersonal(originalData);
     setError("");
     setMessage("");
+    navigate(-1); // Volver a la página anterior
   };
 
   const handleLogout = () => {
