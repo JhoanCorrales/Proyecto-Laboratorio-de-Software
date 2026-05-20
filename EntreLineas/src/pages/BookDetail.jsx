@@ -124,6 +124,7 @@ function BookDetail() {
   const [error, setError] = useState("");
   const [selectedImg, setSelectedImg] = useState(null);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
   const [cartToast, setCartToast] = useState({ msg: "", type: "success" });
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -242,6 +243,29 @@ function BookDetail() {
       showCartToast(err.message || "Error al agregar al carrito.", "error");
     } finally {
       setAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    const user = getCurrentUser();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setBuyingNow(true);
+    try {
+      await addToCart({
+        titulo: doc.titulo,
+        autor: doc.autor ?? "Desconocido",
+        isbn: doc.isbn ?? null,
+        portada_url: selectedImg,
+        precio_unitario: priceCOP,
+        cantidad: 1,
+      });
+      navigate("/checkout");
+    } catch (err) {
+      showCartToast(err.message || "Error al agregar al carrito.", "error");
+      setBuyingNow(false);
     }
   };
 
@@ -438,12 +462,14 @@ function BookDetail() {
                       {isOutOfStock ? "Agotado" : addingToCart ? "Agregando..." : "Agregar al carrito"}
                     </button>
                     <button
-                      className="flex-1 bg-neutral-400 text-gray-600 font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
-                      disabled
-                      title="Módulo en construcción"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={handleBuyNow}
+                      disabled={buyingNow || isOutOfStock}
                     >
-                      <span className="material-symbols-outlined">payments</span>
-                      Comprar ahora
+                      <span className="material-symbols-outlined">
+                        {buyingNow ? "hourglass_empty" : "payments"}
+                      </span>
+                      {buyingNow ? "Preparando..." : "Comprar ahora"}
                     </button>
                   </div>
                   {/* Toast de carrito */}
