@@ -259,7 +259,7 @@ router.get("/balance", verifyToken, async (req, res) => {
 // Body: { monto, tarjetaId }
 // ─────────────────────────────────────────────────────────────────────────────
 router.post("/add-funds", verifyToken, async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { monto, tarjetaId } = req.body;

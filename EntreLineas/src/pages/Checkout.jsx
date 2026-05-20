@@ -10,6 +10,12 @@ import { processPurchase } from "../services/checkoutService";
 
 const IVA = 0.19;
 
+const formatCOP = (value) =>
+  `$${Number(value || 0).toLocaleString("es-CO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+
 // ─── Dynamic cover loader ────────────────────────────────────────────────────
 async function getDynamicCover(titulo, editorial, retries = 3, usePublisher = true) {
   try {
@@ -395,13 +401,13 @@ function Checkout() {
                     <p className="text-neutral-muted text-sm">Saldo disponible en Monedero</p>
                   </div>
                   <p className="text-2xl font-bold text-primary">
-                    ${walletBalance.toLocaleString("es-CO", { minimumFractionDigits: 2 })}
+                    {formatCOP(walletBalance)}
                   </p>
                 </div>
                   {walletBalance < total && (
                     <div className="p-3 bg-red-900/40 border border-red-500/40 text-red-300 rounded-lg flex items-center gap-2 text-sm font-medium">
                       <span className="material-symbols-outlined">warning</span>
-                      Saldo insuficiente. Necesitas ${(total - walletBalance).toLocaleString("es-CO", { minimumFractionDigits: 2 })} más
+                      Saldo insuficiente. Necesitas {formatCOP(total - walletBalance)} más
                     </div>
                   )}
               </div>
