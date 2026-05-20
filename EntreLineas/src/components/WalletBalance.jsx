@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { getWalletBalance, addFundsToWallet, getCards, getWalletTransactions } from "../services/walletService";
 
+const formatCOP = (value) =>
+  `$${Number(value || 0).toLocaleString("es-CO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+
 export default function WalletBalance() {
   const [wallet, setWallet] = useState(null);
   const [cards, setCards] = useState([]);
@@ -105,10 +111,7 @@ export default function WalletBalance() {
                 Saldo Disponible
               </p>
               <p className="text-4xl font-bold text-primary">
-                ${wallet.saldo_disponible.toLocaleString("es-CO", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                {formatCOP(wallet.saldo_disponible)}
               </p>
             </div>
             <span className="material-symbols-outlined text-5xl text-primary/50">
@@ -128,10 +131,7 @@ export default function WalletBalance() {
                 Total Agregado
               </p>
               <p className="text-4xl font-bold text-slate-100">
-                ${wallet.saldo_total_agregado.toLocaleString("es-CO", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                {formatCOP(wallet.saldo_total_agregado)}
               </p>
             </div>
             <span className="material-symbols-outlined text-5xl text-neutral-muted/50">
@@ -206,13 +206,18 @@ export default function WalletBalance() {
                 </label>
                 <input
                   type="number"
-                  min="0.01"
-                  step="0.01"
+                  min="0"
+                  step="1"
                   value={monto}
                   onChange={(e) => setMonto(e.target.value)}
                   placeholder="Ej: 50000"
                   className="w-full px-4 py-2 bg-neutral-accent border border-neutral-border/30 rounded-lg text-slate-100 placeholder-neutral-muted focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                {monto && (
+                <p className="text-sm text-primary mt-2">
+                  Estás agregando: {formatCOP(monto)}
+                </p>
+              )}
               </div>
 
               {/* Botones */}
@@ -299,10 +304,8 @@ export default function WalletBalance() {
                         <td className={`px-6 py-4 text-right font-bold ${
                           isIngreso ? "text-green-400" : isEgreso ? "text-red-400" : "text-slate-100"
                         }`}>
-                          {isIngreso ? "+" : isEgreso ? "-" : ""}${transaction.monto.toLocaleString("es-CO", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {isIngreso ? "+" : isEgreso ? "-" : ""}
+                          {formatCOP(transaction.monto)}
                         </td>
                       </tr>
                     );
