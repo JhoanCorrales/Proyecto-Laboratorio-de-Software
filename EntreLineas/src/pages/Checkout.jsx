@@ -165,11 +165,16 @@ function Checkout() {
 
         // Get stores
         const storesList = await getStores();
-        setStores(storesList.tiendas || storesList);
-        if (storesList.tiendas && storesList.tiendas.length > 0) {
-          setSelectedStore(storesList.tiendas[0].id);
-        } else if (storesList.length > 0) {
-          setSelectedStore(storesList[0].id);
+        const tiendas = Array.isArray(storesList)
+          ? storesList
+          : Array.isArray(storesList.tiendas)
+            ? storesList.tiendas
+            : [];
+
+        setStores(tiendas);
+
+        if (tiendas.length > 0) {
+          setSelectedStore(tiendas[0].id);
         }
       } catch (err) {
         console.error("Error loading checkout data:", err);
@@ -355,7 +360,8 @@ function Checkout() {
                     onChange={(e) => setSelectedStore(e.target.value)}
                     className="w-full bg-background-dark border border-neutral-border rounded-lg text-white py-3 px-4 focus:ring-primary focus:border-primary"
                   >
-                    {stores.map((store) => (
+                    {Array.isArray(stores) &&
+                      stores.map((store) => (
                       <option key={store.id} value={store.id}>
                         {store.nombre} - {store.direccion}, {store.ciudad}
                       </option>
