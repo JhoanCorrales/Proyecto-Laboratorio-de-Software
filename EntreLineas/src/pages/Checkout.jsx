@@ -190,7 +190,7 @@ function Checkout() {
 
   // ── Handle purchase ──
   const handleConfirmPurchase = async () => {
-    if (paymentMethod === "wallet" && walletBalance < total) {
+    if (walletBalance < total) {
       showToast("Saldo insuficiente en el monedero.", "error");
       return;
     }
@@ -198,10 +198,12 @@ function Checkout() {
     setProcessing(true);
     try {
       const purchaseData = {
-        paymentMethod,
-        cardId: paymentMethod === "card" ? selectedCard : null,
+        paymentMethod: "wallet",
+        cardId: null,
         deliveryMethod,
-        shippingAddress: deliveryMethod === "home" ? shippingAddress : null,
+        shippingAddress: deliveryMethod === "home" 
+          ? shippingAddress 
+          : { storeId: selectedStore },
       };
 
       const result = await processPurchase(purchaseData);
@@ -348,10 +350,16 @@ function Checkout() {
               {deliveryMethod === "pickup" && (
                 <div className="space-y-4">
                   <label className="block text-sm font-medium text-neutral-muted">Seleccionar tienda</label>
-                  <select className="w-full bg-background-dark border border-neutral-border rounded-lg text-white py-3 px-4 focus:ring-primary focus:border-primary">
-                    <option>Madrid Centro - Calle del Comercio 15</option>
-                    <option>Madrid Norte - Avenida Principal 42</option>
-                    <option>Barcelona - Paseo de Gracia 88</option>
+                  <select 
+                    value={selectedStore}
+                    onChange={(e) => setSelectedStore(e.target.value)}
+                    className="w-full bg-background-dark border border-neutral-border rounded-lg text-white py-3 px-4 focus:ring-primary focus:border-primary"
+                  >
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.nombre} - {store.direccion}, {store.ciudad}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -361,83 +369,31 @@ function Checkout() {
             <div className="bg-neutral-dark border border-neutral-border rounded-xl p-6">
               <h3 className="text-xl font-bold text-white mb-6">Método de pago</h3>
 
-              {/* Payment method tabs */}
-              <div className="flex gap-3 mb-6">
-                <button
-                  onClick={() => setPaymentMethod("wallet")}
-                  className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
-                    paymentMethod === "wallet"
-                      ? "bg-primary text-background-dark"
-                      : "border border-neutral-border text-neutral-muted hover:text-white"
-                  }`}
-                >
-                  <span className="material-symbols-outlined">account_balance_wallet</span>
-                  Monedero
-                </button>
-                <button
-                  onClick={() => setPaymentMethod("card")}
-                  className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
-                    paymentMethod === "card"
-                      ? "bg-primary text-background-dark"
-                      : "border border-neutral-border text-neutral-muted hover:text-white"
-                  }`}
-                >
-                  <span className="material-symbols-outlined">credit_card</span>
-                  Tarjeta
-                </button>
-              </div>
-
               {/* Wallet info */}
-              {paymentMethod === "wallet" && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-background-dark border border-neutral-border rounded-lg">
-                    <p className="text-neutral-muted text-sm mb-2">Saldo disponible</p>
-                    <p className="text-2xl font-bold text-primary">
-                      ${walletBalance.toLocaleString("es-CO", { minimumFractionDigits: 2 })}
-                    </p>
+              <div className="space-y-4">
+                <div className="p-4 bg-background-dark border border-neutral-border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
+                    <p className="text-neutral-muted text-sm">Saldo disponible en Monedero</p>
                   </div>
+                  <p className="text-2xl font-bold text-primary">
+                    ${walletBalance.toLocaleString("es-CO", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
                   {walletBalance < total && (
                     <div className="p-3 bg-red-900/40 border border-red-500/40 text-red-300 rounded-lg flex items-center gap-2 text-sm font-medium">
                       <span className="material-symbols-outlined">warning</span>
                       Saldo insuficiente. Necesitas ${(total - walletBalance).toLocaleString("es-CO", { minimumFractionDigits: 2 })} más
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Card selection */}
-              {paymentMethod === "card" && (
-                <div className="space-y-4">
-                  {cards.length > 0 ? (
-                    <>
-                      <label className="block text-sm font-medium text-neutral-muted">Seleccionar tarjeta</label>
-                      <select
-                        value={selectedCard}
-                        onChange={(e) => setSelectedCard(e.target.value)}
-                        className="w-full bg-background-dark border border-neutral-border rounded-lg text-white py-3 px-4 focus:ring-primary focus:border-primary"
-                      >
-                        {cards.map((card) => (
-                          <option key={card.id} value={card.id}>
-                            {card.tipo_tarjeta} terminada en {card.ultimos_digitos} ({card.fecha_expiracion})
-                          </option>
-                        ))}
-                      </select>
-                    </>
-                  ) : (
-                    <p className="text-neutral-muted text-sm">No tienes tarjetas guardadas</p>
-                  )}
-                  <button className="w-full py-2 border-2 border-dashed border-neutral-border text-neutral-muted rounded-lg font-semibold hover:border-primary hover:text-primary transition-all">
-                    + Agregar nueva tarjeta
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Actions */}
             <div className="space-y-4">
               <button
                 onClick={handleConfirmPurchase}
-                disabled={processing || (paymentMethod === "wallet" && walletBalance < total)}
+                disabled={processing || walletBalance < total}
                 className="w-full bg-primary hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed text-background-dark text-lg font-black py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
               >
                 {processing ? (
