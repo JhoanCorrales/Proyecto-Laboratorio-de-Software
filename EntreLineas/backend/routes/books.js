@@ -214,6 +214,35 @@ router.get("/public", async (req, res) => {
 });
 
 /**
+ * GET /api/books/stores-by-title?titulo=X
+ * Get all stores where a book with the given title is available
+ * This returns stores for ALL instances of the book (same title, different stores)
+ */
+router.get("/stores-by-title", async (req, res) => {
+  try {
+    const { titulo } = req.query;
+    if (!titulo || titulo.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Título requerido" });
+    }
+
+    const query = `
+      SELECT DISTINCT t.id, t.nombre, t.ciudad, SUM(it.cantidad_disponible) as stock
+      FROM inventario_tienda it
+      JOIN tiendas t ON it.tienda_id = t.id
+      JOIN libros l ON it.libro_id = l.id
+      WHERE LOWER(l.titulo) = LOWER($1) AND it.cantidad_disponible > 0
+      GROUP BY t.id, t.nombre, t.ciudad
+      ORDER BY t.ciudad ASC, t.nombre ASC
+    `;
+    const result = await db.query(query, [titulo.trim()]);
+    res.status(200).json({ success: true, stores: result.rows });
+  } catch (err) {
+    console.error("Error fetching book stores by title:", err);
+    res.status(500).json({ success: false, message: "Error fetching book stores", error: err.message });
+  }
+});
+
+/**
  * GET /api/books/:id/stores
  * Get all stores that have the specific book ID in their inventory
  */

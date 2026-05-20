@@ -158,9 +158,9 @@ function BookDetail() {
         const mainImg = await getDynamicCover(localBook);
         setSelectedImg(mainImg);
 
-        // 2. Fetch de inventario en tiendas locales
+        // 2. Fetch de inventario en tiendas locales - busca por TITULO (todas las tiendas con ese libro)
         try {
-           const storesRes = await fetch(`${baseUrl}/api/books/${localBook.id}/stores`);
+           const storesRes = await fetch(`${baseUrl}/api/books/stores-by-title?titulo=${encodeURIComponent(localBook.titulo)}`);
            if (storesRes.ok) {
              const storesData = await storesRes.json();
              setBookStores(storesData.stores || []);
