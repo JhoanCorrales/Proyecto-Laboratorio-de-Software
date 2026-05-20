@@ -274,8 +274,14 @@ export default function WalletBalance() {
                 </thead>
                 <tbody className="divide-y divide-neutral-border/20">
                   {transactions.map((transaction) => {
-                    const isIngreso = transaction.tipo_transaccion === "ingreso" || transaction.tipo_transaccion === "recarga";
-                    const isEgreso = transaction.tipo_transaccion === "egreso" || transaction.tipo_transaccion === "compra";
+                    const isIngreso =
+                      transaction.tipo_transaccion === "ingreso" ||
+                      transaction.tipo_transaccion === "recarga" ||
+                      transaction.tipo_transaccion === "reembolso";
+
+                    const isEgreso =
+                      transaction.tipo_transaccion === "egreso" ||
+                      transaction.tipo_transaccion === "compra";
                     
                     return (
                       <tr key={transaction.id} className="hover:bg-neutral-accent/20 transition-colors">
@@ -284,27 +290,45 @@ export default function WalletBalance() {
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
-                            isIngreso 
-                              ? "bg-green-900/30 text-green-400 border border-green-600/30" 
-                              : isEgreso 
+                            transaction.tipo_transaccion === "reembolso"
+                              ? "bg-yellow-900/30 text-yellow-400 border border-yellow-600/30"
+                              : isIngreso
+                              ? "bg-green-900/30 text-green-400 border border-green-600/30"
+                              : isEgreso
                               ? "bg-red-900/30 text-red-400 border border-red-600/30"
-                              : "bg-blue-900/30 text-blue-400 border border-blue-600/30"
+                              : "bg-green-900/30 text-green-400 border border-green-600/30"
                           }`}>
                             <span className="material-symbols-outlined text-sm">
-                              {isIngreso ? "add_circle" : isEgreso ? "remove_circle" : "swap_horiz"}
+                              {transaction.tipo_transaccion === "reembolso"
+                              ? "undo"
+                              : isIngreso
+                              ? "add_circle"
+                              : isEgreso
+                              ? "remove_circle"
+                              : "swap_horiz"}
                             </span>
-                            {transaction.tipo_transaccion === "ingreso" || transaction.tipo_transaccion === "recarga"
+                            {transaction.tipo_transaccion === "reembolso"
+                              ? "Reembolso"
+                              : transaction.tipo_transaccion === "ingreso" || transaction.tipo_transaccion === "recarga"
                               ? "Ingreso"
                               : transaction.tipo_transaccion === "egreso" || transaction.tipo_transaccion === "compra"
-                              ? "Egreso"
-                              : "Transferencia"
+                              ? "Compra"
+                              : "Recarga"
                             }
                           </span>
                         </td>
-                        <td className={`px-6 py-4 text-right font-bold ${
-                          isIngreso ? "text-green-400" : isEgreso ? "text-red-400" : "text-slate-100"
-                        }`}>
-                          {isIngreso ? "+" : isEgreso ? "-" : ""}
+                        <td
+                          className={`px-6 py-4 text-right font-bold ${
+                            transaction.tipo_transaccion === "reembolso"
+                              ? "text-yellow-400"
+                              : isIngreso
+                              ? "text-green-400"
+                              : isEgreso
+                              ? "text-red-400"
+                              : "text-slate-100"
+                          }`}
+                        >
+                          {(isIngreso || transaction.tipo_transaccion === "reembolso") ? "+" : isEgreso ? "-" : ""}
                           {formatCOP(transaction.monto)}
                         </td>
                       </tr>
