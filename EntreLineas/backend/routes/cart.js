@@ -122,7 +122,7 @@ router.post("/items", verifyToken, async (req, res) => {
     // Devolver el carrito actualizado
     const items = await db.query(
       `SELECT ci.id, ci.libro_id, ci.cantidad, ci.precio_unitario,
-              l.titulo, l.autor, l.portada_url
+              l.titulo, l.autor, l.portada_url, l.stock_general as stock
        FROM carrito_items ci
        JOIN libros l ON ci.libro_id = l.id
        WHERE ci.carrito_id = $1
@@ -173,7 +173,7 @@ router.put("/items/:libroId", verifyToken, async (req, res) => {
 
     const items = await db.query(
       `SELECT ci.id, ci.libro_id, ci.cantidad, ci.precio_unitario,
-              l.titulo, l.autor, l.portada_url
+              l.titulo, l.autor, l.portada_url, l.stock_general as stock
        FROM carrito_items ci
        JOIN libros l ON ci.libro_id = l.id
        WHERE ci.carrito_id = $1
@@ -210,7 +210,7 @@ router.delete("/items/:libroId", verifyToken, async (req, res) => {
 
     const items = await db.query(
       `SELECT ci.id, ci.libro_id, ci.cantidad, ci.precio_unitario,
-              l.titulo, l.autor, l.portada_url
+              l.titulo, l.autor, l.portada_url, l.stock_general as stock
        FROM carrito_items ci
        JOIN libros l ON ci.libro_id = l.id
        WHERE ci.carrito_id = $1
