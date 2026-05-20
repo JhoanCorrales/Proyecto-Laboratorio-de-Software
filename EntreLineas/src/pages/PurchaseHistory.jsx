@@ -5,6 +5,12 @@ import AuthRequiredModal from "../components/AuthRequiredModal";
 import { getCurrentUser } from "../services/authService";
 import { getPurchaseHistory, getPurchaseDetail, cancelPurchase } from "../services/checkoutService";
 
+const formatCOP = (value) =>
+  `$${Number(value || 0).toLocaleString("es-CO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+
 // ─── Toast notification ───────────────────────────────────────────────────────
 function Toast({ message, type }) {
   if (!message) return null;
@@ -128,10 +134,10 @@ function PurchaseDetailModal({ purchaseId, isOpen, onClose, onCancel }) {
                     </div>
                     <div className="text-right">
                       <p className="text-primary font-bold">
-                        ${item.subtotal.toLocaleString("es-CO", { minimumFractionDigits: 2 })}
+                        {formatCOP(item.subtotal)}
                       </p>
                       <p className="text-neutral-muted text-xs mt-1">
-                        ${(item.precio_unitario).toLocaleString("es-CO", { minimumFractionDigits: 2 })} c/u
+                        {formatCOP(item.precio_unitario)} c/u
                       </p>
                     </div>
                   </div>
@@ -144,7 +150,7 @@ function PurchaseDetailModal({ purchaseId, isOpen, onClose, onCancel }) {
               <div className="flex justify-between items-center">
                 <span className="text-xl font-bold text-white">Total:</span>
                 <span className="text-2xl font-black text-primary">
-                  ${detail.total.toLocaleString("es-CO", { minimumFractionDigits: 2 })}
+                    {formatCOP(detail.total)}
                 </span>
               </div>
             </div>
@@ -330,7 +336,7 @@ function PurchaseHistory() {
                   <div className="text-right">
                     <p className="text-text-muted text-sm mb-1">Total</p>
                     <p className="text-2xl font-black text-primary">
-                      ${purchase.total.toLocaleString("es-CO", { minimumFractionDigits: 0 })}
+                       {formatCOP(purchase.total)}
                     </p>
                   </div>
                 </div>
