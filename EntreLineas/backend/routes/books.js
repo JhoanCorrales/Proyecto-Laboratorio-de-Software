@@ -167,8 +167,9 @@ router.get("/public", async (req, res) => {
 
     const whereClause = conditions.join(" AND ");
 
+    // Contar títulos ÚNICOS (deduplica por nombre)
     const countQuery = `
-      SELECT COUNT(DISTINCT l.id) as total
+      SELECT COUNT(DISTINCT LOWER(l.titulo)) as total
       FROM libros l
       LEFT JOIN categorias c ON l.categoria_id = c.id
       WHERE ${whereClause}
@@ -179,14 +180,20 @@ router.get("/public", async (req, res) => {
     values.push(offset);
     const offsetIdx = values.length;
 
+    // Obtener libros deduplicados: subquery con DISTINCT ON, luego paginar el resultado
     const dataQuery = `
-      SELECT l.id, l.titulo, l.autor, l.año, l.genero, l.numero_paginas as paginas, 
-             l.editorial, l.isbn, l.idioma, l.fecha_publicacion, l.precio as "priceRaw", 
-             l.portada_url, l.estado, l.stock_general, c.nombre as categoria_nombre
-      FROM libros l
-      LEFT JOIN categorias c ON l.categoria_id = c.id
-      WHERE ${whereClause}
-      ORDER BY l.titulo ASC
+      WITH dedup_books AS (
+        SELECT DISTINCT ON (LOWER(l.titulo)) 
+               l.id, l.titulo, l.autor, l.año, l.genero, l.numero_paginas as paginas, 
+               l.editorial, l.isbn, l.idioma, l.fecha_publicacion, l.precio as "priceRaw", 
+               l.portada_url, l.estado, l.stock_general, c.nombre as categoria_nombre
+        FROM libros l
+        LEFT JOIN categorias c ON l.categoria_id = c.id
+        WHERE ${whereClause}
+        ORDER BY LOWER(l.titulo), l.id ASC
+      )
+      SELECT * FROM dedup_books
+      ORDER BY titulo ASC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
 
