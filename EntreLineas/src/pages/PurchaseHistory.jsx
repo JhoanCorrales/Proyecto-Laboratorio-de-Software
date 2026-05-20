@@ -72,7 +72,7 @@ function PurchaseDetailModal({ purchaseId, isOpen, onClose, onCancel }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
       <div className="bg-neutral-dark border border-neutral-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-neutral-border flex items-center justify-between sticky top-0 bg-neutral-dark">
