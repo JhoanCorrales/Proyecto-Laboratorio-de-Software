@@ -357,9 +357,8 @@ function Cart() {
                             {/* Eliminar */}
                             <button
                               onClick={() => handleRemove(item.libro_id)}
-                              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors text-sm font-medium"
                               aria-label="Eliminar libro"
-                              disabled={isOutOfStock}
                             >
                               <span className="material-symbols-outlined text-lg">delete</span>
                               Eliminar
