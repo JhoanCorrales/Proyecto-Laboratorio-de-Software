@@ -51,6 +51,24 @@ export function getToken() {
 }
 
 /**
+ * Obtiene el perfil completo del usuario autenticado
+ * @returns {Promise<{ id, nombre, email, telefono, direccion, ciudad, departamento, codigo_postal, roles }>}
+ * @throws {Error} con el mensaje de error del servidor
+ */
+export async function getUserProfile() {
+  const res = await fetch(`${API_URL}/api/auth/profile`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener perfil.");
+  return data;
+}
+
+/**
  * Cierra la sesión eliminando los datos del localStorage.
  */
 export function logout() {

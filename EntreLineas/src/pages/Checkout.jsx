@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import AuthRequiredModal from "../components/AuthRequiredModal";
 import { getCart } from "../services/cartService";
-import { getCurrentUser } from "../services/authService";
-import { getWalletBalance, getCards } from "../services/walletService";
+import { getCurrentUser, getUserProfile } from "../services/authService";
+import { getWalletBalance } from "../services/walletService";
+import { getStores } from "../services/storesService";
 import { processPurchase } from "../services/checkoutService";
 
 const IVA = 0.19;
@@ -109,18 +110,18 @@ function Checkout() {
   // Form state
   const [deliveryMethod, setDeliveryMethod] = useState("home");
   const [paymentMethod, setPaymentMethod] = useState("wallet");
-  const [selectedCard, setSelectedCard] = useState("");
-  const [cards, setCards] = useState([]);
+  const [selectedStore, setSelectedStore] = useState("");
   const [walletBalance, setWalletBalance] = useState(0);
+  const [stores, setStores] = useState([]);
 
   // User data
   const [userData, setUserData] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({
-    name: "Casa Principal",
-    address: "Calle de los Libros 42, 3ºB",
-    city: "Madrid",
-    postalCode: "28001",
-    country: "España"
+    name: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    country: "Colombia"
   });
 
   const showToast = (message, type = "success") => {
@@ -128,7 +129,7 @@ function Checkout() {
     setTimeout(() => setToast({ message: "", type: "success" }), 3000);
   };
 
-  // ── Load cart and payment methods ──
+  // ── Load cart, user profile, wallet balance and stores ──
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
@@ -148,15 +149,27 @@ function Checkout() {
         }
         setItems(cartData.items);
 
+        // Get user profile (with address)
+        const profile = await getUserProfile();
+        setShippingAddress({
+          name: profile.nombre,
+          address: profile.direccion || "",
+          city: profile.ciudad || "",
+          postalCode: profile.codigo_postal || "",
+          country: "Colombia"
+        });
+
         // Get wallet balance
         const wallet = await getWalletBalance();
         setWalletBalance(wallet.saldo_disponible);
 
-        // Get cards
-        const cardList = await getCards();
-        setCards(cardList);
-        if (cardList.length > 0) {
-          setSelectedCard(cardList[0].id);
+        // Get stores
+        const storesList = await getStores();
+        setStores(storesList.tiendas || storesList);
+        if (storesList.tiendas && storesList.tiendas.length > 0) {
+          setSelectedStore(storesList.tiendas[0].id);
+        } else if (storesList.length > 0) {
+          setSelectedStore(storesList[0].id);
         }
       } catch (err) {
         console.error("Error loading checkout data:", err);
