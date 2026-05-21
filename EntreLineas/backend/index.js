@@ -8,6 +8,7 @@ import storesRouter from "./routes/stores.js";
 import booksRouter from "./routes/books.js";
 import checkoutRouter from "./routes/checkout.js";
 import purchasesRouter from "./routes/purchases.js";
+import noticiasRouter from "./routes/noticias.js";
 
 dotenv.config();
 
@@ -89,6 +90,9 @@ app.use("/api/checkout", checkoutRouter);
 
 // Purchases routes
 app.use("/api/purchases", purchasesRouter);
+
+// Noticias routes
+app.use("/api/noticias", noticiasRouter);
 
 // 404 handler
 app.use((req, res) => {

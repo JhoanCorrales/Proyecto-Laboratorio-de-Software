@@ -169,6 +169,9 @@ function Navbar({ cartCount: cartCountProp }) {
             <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
               <button onClick={() => navigate("/home")} className="hover:text-primary transition-colors">Inicio</button>
               <button onClick={() => navigate("/catalogue")} className="hover:text-primary transition-colors">Catálogo</button>
+              <button onClick={() => navigate("/news")} className="hover:text-primary transition-colors flex items-center gap-1">
+                Noticias
+              </button>
             </div>
           )}
         </div>
@@ -265,9 +268,14 @@ function Navbar({ cartCount: cartCountProp }) {
             </button>
           )}
           {isAdmin && (
-            <button onClick={() => navigate("/stores")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary" title="Gestionar tiendas">
-              <span className="material-symbols-outlined">store</span>
-            </button>
+            <>
+              <button onClick={() => navigate("/admin/news")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary" title="Publicar Noticias">
+                <span className="material-symbols-outlined">campaign</span>
+              </button>
+              <button onClick={() => navigate("/stores")} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary" title="Gestionar tiendas">
+                <span className="material-symbols-outlined">store</span>
+              </button>
+            </>
           )}
           {!isRoot && !isAdmin && (
             <button 

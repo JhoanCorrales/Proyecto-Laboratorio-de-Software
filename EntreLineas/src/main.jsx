@@ -20,6 +20,8 @@ import AddPaymentMethod from './pages/AddPaymentMethod.jsx'
 import Wallet from './pages/Wallet.jsx'
 import StoresPage from './pages/StoresPage.jsx'
 import StoreInventoryPage from './pages/StoreInventoryPage.jsx'
+import NewsPublisherPage from './pages/NewsPublisherPage.jsx'
+import NewsPage from './pages/NewsPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 const router = createBrowserRouter([
@@ -122,6 +124,18 @@ const router = createBrowserRouter([
         <StoreInventoryPage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/admin/news",
+    element: (
+      <ProtectedRoute requiredRole="Administrador">
+        <NewsPublisherPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/news",
+    element: <NewsPage />,
   }
 ]);
 
