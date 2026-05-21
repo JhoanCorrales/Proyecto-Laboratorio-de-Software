@@ -75,7 +75,6 @@ export default function NewsPublisherPage() {
   const [contenido, setContenido] = useState('');
   const [resumen, setResumen] = useState('');
   const [estado, setEstado] = useState('publicada');
-  const [fechaPublicacion, setFechaPublicacion] = useState(new Date().toISOString().split('T')[0]);
   const [featured, setFeatured] = useState(false);
   
   // Edit mode
@@ -158,7 +157,6 @@ export default function NewsPublisherPage() {
     setContenido('');
     setResumen('');
     setEstado('publicada');
-    setFechaPublicacion(new Date().toISOString().split('T')[0]);
     setFeatured(false);
     setSelectedStoreId('');
     setSelectedBookId('');
@@ -179,7 +177,6 @@ export default function NewsPublisherPage() {
     setContenido(noticia.contenido);
     setResumen(noticia.resumen || '');
     setEstado(noticia.estado || 'publicada');
-    setFechaPublicacion(noticia.fecha_publicacion?.split('T')[0] || new Date().toISOString().split('T')[0]);
     setFeatured(noticia.featured || false);
     setIsEditing(true);
     setEditingId(noticia.id);
@@ -209,7 +206,7 @@ export default function NewsPublisherPage() {
       contenido,
       resumen,
       estado,
-      fecha_publicacion: fechaPublicacion,
+      fecha_publicacion: new Date().toISOString().split('T')[0],
       featured,
       libro_relacionado_id: selectedBook ? selectedBook.id : null,
     };
@@ -477,15 +474,7 @@ export default function NewsPublisherPage() {
                       <option value="publicada">Publicar ahora</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">Fecha de publicación</label>
-                    <input 
-                      type="date" 
-                      value={fechaPublicacion}
-                      onChange={(e) => setFechaPublicacion(e.target.value)}
-                      className="w-full bg-background-dark border border-neutral-border rounded-lg h-12 px-4 text-white focus:ring-2 focus:ring-primary focus:border-primary [color-scheme:dark]"
-                    />
-                  </div>
+
                   <div className="md:col-span-2 flex items-center gap-3 py-2">
                     <input 
                       type="checkbox" 
