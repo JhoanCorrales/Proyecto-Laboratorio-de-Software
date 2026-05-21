@@ -186,15 +186,38 @@ function BookDetail() {
           }
         } catch (err) {}
 
-        // 4. Libros relacionados usando info de DB (autor o genero)
+        // 4. Libros relacionados: busca por cada género del libro actual
         try {
-          const relQuery = encodeURIComponent(localBook.autor || localBook.categoria_nombre || '');
-          const relRes = await fetch(`${baseUrl}/api/books/public?q=${relQuery}&limit=10`);
-          if (relRes.ok) {
-            const relData = await relRes.json();
-            const filtered = (relData.docs ?? []).filter((b) => b.id !== localBook.id).slice(0, 5);
-            setRelated(filtered);
+          let allRelated = [];
+          
+          // Parsear los géneros (pueden estar separados por ", ")
+          const generos = (localBook.genero || '')
+            .split(',')
+            .map(g => g.trim())
+            .filter(g => g.length > 0);
+          
+          // Si no tiene géneros, usa la categoría
+          if (generos.length === 0 && localBook.categoria_nombre) {
+            generos.push(localBook.categoria_nombre);
           }
+          
+          // Buscar por cada género
+          for (const genero of generos) {
+            try {
+              const relRes = await fetch(`${baseUrl}/api/books/public?cat=${encodeURIComponent(genero)}&limit=10`);
+              if (relRes.ok) {
+                const relData = await relRes.json();
+                allRelated = allRelated.concat(relData.docs ?? []);
+              }
+            } catch (e) {}
+          }
+          
+          // Remover duplicados y el libro actual, luego tomar los primeros 5
+          const uniqueRelated = Array.from(
+            new Map(allRelated.map(b => [b.id, b])).values()
+          ).filter((b) => b.id !== localBook.id).slice(0, 5);
+          
+          setRelated(uniqueRelated);
         } catch (e) {}
 
       } catch (err) {
@@ -217,7 +240,6 @@ function BookDetail() {
   const doc = searchDoc ?? {};
   const priceCOP = Number(doc.priceRaw || doc.precio || 0);
   const price = `$${priceCOP.toLocaleString("es-CO")}`;
-  const originalPrice = `$${Math.round(priceCOP * 1.2).toLocaleString("es-CO")}`;
   const rating = 4;
   const stock = Number(doc.stock_general || 0);
   const isOutOfStock = stock === 0;
@@ -436,11 +458,7 @@ function BookDetail() {
 
                   {/* Precio */}
                   <div className="py-6">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-bold text-primary">{price}</span>
-                      <span className="text-neutral-muted line-through text-xl">{originalPrice}</span>
-                    </div>
-                    <p className="text-green-500 text-sm font-semibold mt-1">¡Precio especial hoy!</p>
+                    <span className="text-5xl font-bold text-primary">{price}</span>
                   </div>
 
                   {/* Botones */}
@@ -512,7 +530,7 @@ function BookDetail() {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-12">
+              <div>
                 {/* Especificaciones */}
                 <div>
                   <h3 className="text-xl font-bold mb-6 text-slate-900 dark:text-white flex items-center gap-2">
@@ -535,18 +553,6 @@ function BookDetail() {
                     </tbody>
                   </table>
                 </div>
-
-                {/* Envío */}
-                <div className="flex flex-col justify-center items-center bg-background-light dark:bg-background-dark p-6 rounded-xl border border-gray-300 dark:border-gray-600 opacity-60">
-                  <span className="material-symbols-outlined text-gray-400 text-5xl mb-4">local_shipping</span>
-                  <h4 className="text-lg font-bold text-gray-500 mb-2">Envío Gratuito</h4>
-                  <p className="text-gray-400 text-center text-sm">
-                    Módulo en construcción
-                  </p>
-                  <button className="mt-4 text-gray-400 font-bold text-sm uppercase cursor-not-allowed opacity-50" disabled>
-                    Ver métodos de envío
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -555,7 +561,7 @@ function BookDetail() {
               <div className="flex justify-between items-end mb-8">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Libros relacionados</h2>
-                  <p className="text-neutral-muted">Basado en tus intereses literarios compartiendo autor o género</p>
+                  <p className="text-neutral-muted">Libros similares disponibles en tiendas</p>
                 </div>
                 <Link to="/catalogue" className="text-primary font-semibold hover:underline flex items-center gap-1">
                   Ver todos <span className="material-symbols-outlined text-sm">arrow_forward</span>
