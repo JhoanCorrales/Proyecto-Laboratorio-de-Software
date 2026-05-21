@@ -11,11 +11,14 @@ import {
   DiscoverIconOnly,
 } from "../assets/cardLogos";
 
-const formatCOP = (value) =>
-  `$${Number(value || 0).toLocaleString("es-CO", {
+const formatCOP = (value) => {
+  const numValue = Number(value) || 0;
+  if (isNaN(numValue)) return "$0";
+  return `$${numValue.toLocaleString("es-CO", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
+};
 
 const getCardLogo = (tipotarjeta) => {
   if (!tipotarjeta) return null;
@@ -232,7 +235,7 @@ export default function Wallet() {
                           </p>
                           <p className="text-4xl font-bold text-primary">
                             {formatCOP(
-                              purchases.reduce((sum, p) => sum + (p.monto_total || 0), 0)
+                              purchases.reduce((sum, p) => sum + (Number(p.monto_total) || 0), 0)
                             )}
                           </p>
                         </div>
@@ -283,9 +286,7 @@ export default function Wallet() {
                                     {(purchase.libros?.length || 0)} libro(s)
                                   </td>
                                   <td className="px-6 py-4 text-right font-bold text-primary">
-                                    {formatCOP(
-                                      purchases.reduce((sum, p) => sum + (p.monto_total || 0), 0)
-                                    )}
+                                    {formatCOP(purchase.monto_total)}
                                   </td>
                                 </tr>
                               ))}
