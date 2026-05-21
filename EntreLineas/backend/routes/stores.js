@@ -252,6 +252,7 @@ router.get("/:storeId/inventory", verifyToken, requireRole("Administrador"), asy
         it.cantidad_disponible as stock,
         it.cantidad_minima,
         it.cantidad_maxima,
+        l.id,
         l.titulo,
         l.autor,
         l.isbn,
@@ -261,7 +262,8 @@ router.get("/:storeId/inventory", verifyToken, requireRole("Administrador"), asy
         l.numero_paginas as paginas,
         l.idioma,
         l.fecha_publicacion,
-        l.precio
+        l.precio,
+        l.portada_url
       FROM inventario_tienda it
       JOIN libros l ON it.libro_id = l.id
       WHERE it.tienda_id = $1

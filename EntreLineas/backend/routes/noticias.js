@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
 router.get("/all", verifyToken, requireRole("Administrador", "Root"), async (req, res) => {
   try {
     const query = `
-      SELECT n.*, l.titulo as libro_titulo
+      SELECT n.*, l.titulo as libro_titulo, l.autor as libro_autor, l.editorial as libro_editorial, l.portada_url
       FROM noticias n
       LEFT JOIN libros l ON n.libro_relacionado_id = l.id
       ORDER BY n.created_at DESC
@@ -72,6 +72,62 @@ router.post("/", verifyToken, requireRole("Administrador", "Root"), async (req, 
   } catch (err) {
     console.error("Error creating news:", err);
     res.status(500).json({ error: "Error interno al crear la noticia" });
+  }
+});
+
+// PUT /api/noticias/:id - Actualizar una noticia (solo Admin)
+router.put("/:id", verifyToken, requireRole("Administrador", "Root"), async (req, res) => {
+  const { id } = req.params;
+  const { titulo, contenido, libro_relacionado_id, fecha_publicacion, estado, resumen } = req.body;
+
+  if (!titulo || !contenido) {
+    return res.status(400).json({ error: "Título y contenido son requeridos" });
+  }
+
+  try {
+    const query = `
+      UPDATE noticias 
+      SET titulo = $1, contenido = $2, libro_relacionado_id = $3, fecha_publicacion = $4, estado = $5, resumen = $6
+      WHERE id = $7
+      RETURNING *
+    `;
+    const values = [
+      titulo,
+      contenido,
+      libro_relacionado_id || null,
+      fecha_publicacion || new Date(),
+      estado || 'publicada',
+      resumen || null,
+      id
+    ];
+    const result = await db.query(query, values);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Noticia no encontrada" });
+    }
+    
+    res.json({ message: "Noticia actualizada exitosamente", noticia: result.rows[0] });
+  } catch (err) {
+    console.error("Error updating news:", err);
+    res.status(500).json({ error: "Error al actualizar la noticia" });
+  }
+});
+
+// DELETE /api/noticias/:id - Eliminar una noticia (solo Admin)
+router.delete("/:id", verifyToken, requireRole("Administrador", "Root"), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query("DELETE FROM noticias WHERE id = $1 RETURNING id", [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Noticia no encontrada" });
+    }
+    
+    res.json({ message: "Noticia eliminada exitosamente" });
+  } catch (err) {
+    console.error("Error deleting news:", err);
+    res.status(500).json({ error: "Error al eliminar la noticia" });
   }
 });
 
