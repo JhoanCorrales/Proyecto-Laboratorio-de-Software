@@ -195,12 +195,16 @@ export default function Register() {
         <div className="p-6 sm:p-10 border-b border-slate-200 dark:border-[#325a67] flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
             <span className="material-symbols-outlined text-primary text-4xl">
-              menu_book
+              <a href="/home">
+                menu_book
+              </a>
             </span>
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Entre Líneas
+            <a href="/home">
+              Entre Líneas
+            </a>
           </h1>
 
           <p className="text-slate-600 dark:text-[#92bbc9] mt-2">

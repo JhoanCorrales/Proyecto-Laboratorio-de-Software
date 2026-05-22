@@ -43,7 +43,7 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-dark font-display text-slate-100">
-      
+
       <div
         className="flex flex-1 justify-center items-center bg-cover bg-center bg-fixed"
         style={{
@@ -57,9 +57,11 @@ export default function Login() {
           <header className="flex items-center justify-between border-b border-neutral-accent px-4 py-3 mb-6">
             <div className="flex items-center gap-4">
               <span className="material-symbols-outlined text-primary text-3xl">
-                menu_book
+                <a href="/home">
+                  menu_book
+                </a>
               </span>
-              <h2 className="text-lg font-bold">Entre Líneas</h2>
+              <h2 className="text-lg font-bold"> <a href="/home">Entre Líneas</a></h2>
             </div>
             <button className="flex items-center justify-center rounded-lg h-10 bg-neutral-accent px-3">
               <span className="material-symbols-outlined text-[20px]">
