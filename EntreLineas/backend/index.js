@@ -9,6 +9,7 @@ import booksRouter from "./routes/books.js";
 import checkoutRouter from "./routes/checkout.js";
 import purchasesRouter from "./routes/purchases.js";
 import noticiasRouter from "./routes/noticias.js";
+import recommendationsRouter from "./routes/recommendations.js";
 
 dotenv.config();
 
@@ -93,6 +94,9 @@ app.use("/api/purchases", purchasesRouter);
 
 // Noticias routes
 app.use("/api/noticias", noticiasRouter);
+
+// Recommendations routes
+app.use("/api/recommendations", recommendationsRouter);
 
 // 404 handler
 app.use((req, res) => {

@@ -9,6 +9,7 @@ export function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("Auth error: No auth header or invalid format", { authHeader });
     return res.status(401).json({ error: "Token no proporcionado" });
   }
 
@@ -16,11 +17,13 @@ export function verifyToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Token verified successfully for user:", decoded.id);
     req.user = decoded;
     next();
   } catch (err) {
     console.error("Error verificando token:", err.message);
-    return res.status(401).json({ error: "Token inválido o expirado" });
+    console.error("JWT_SECRET length:", process.env.JWT_SECRET?.length);
+    return res.status(401).json({ error: "Token inválido o expirado", details: err.message });
   }
 }
 

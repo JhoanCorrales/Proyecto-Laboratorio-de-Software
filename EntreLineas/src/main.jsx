@@ -22,6 +22,7 @@ import StoresPage from './pages/StoresPage.jsx'
 import StoreInventoryPage from './pages/StoreInventoryPage.jsx'
 import NewsPublisherPage from './pages/NewsPublisherPage.jsx'
 import NewsPage from './pages/NewsPage.jsx'
+import AIRecommendationsPage from './pages/AIRecommendationsPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 const router = createBrowserRouter([
@@ -136,6 +137,14 @@ const router = createBrowserRouter([
   {
     path: "/news",
     element: <NewsPage />,
+  },
+  {
+    path: "/ai-recommendations",
+    element: (
+      <ProtectedRoute>
+        <AIRecommendationsPage />
+      </ProtectedRoute>
+    ),
   }
 ]);
 
