@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { getStores } from '../services/storesService';
 import AddBookToInventoryModal from '../components/inventory/AddBookToInventoryModal';
 import EditBookModal from '../components/inventory/EditBookModal';
+import DeleteBookFromInventoryModal from '../components/inventory/DeleteBookFromInventoryModal';
 import { booksService } from '../services/booksService';
 
 export default function StoreInventoryPage() {
@@ -17,7 +18,9 @@ export default function StoreInventoryPage() {
   const [success, setSuccess] = useState('');
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [showEditBookModal, setShowEditBookModal] = useState(false);
+  const [showDeleteBookModal, setShowDeleteBookModal] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
 
   // Búsqueda y filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -396,10 +399,14 @@ export default function StoreInventoryPage() {
                               <span className="material-symbols-outlined">edit</span>
                             </button>
                             <button
-                              className="p-2 text-neutral-muted hover:bg-neutral-accent rounded-lg transition-colors"
-                              title="Ver historial"
+                              onClick={() => {
+                                setSelectedBook(book);
+                                setShowDeleteBookModal(true);
+                              }}
+                              className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              title="Eliminar del Inventario"
                             >
-                              <span className="material-symbols-outlined">history</span>
+                              <span className="material-symbols-outlined">delete</span>
                             </button>
                           </div>
                         </td>
@@ -512,6 +519,19 @@ export default function StoreInventoryPage() {
           storeId={storeId}
           libroId={selectedBookId}
           onBookUpdated={handleBookUpdated}
+        />
+      )}
+
+      {showDeleteBookModal && (
+        <DeleteBookFromInventoryModal
+          isOpen={showDeleteBookModal}
+          onClose={() => {
+            setShowDeleteBookModal(false);
+            setSelectedBook(null);
+          }}
+          storeId={storeId}
+          book={selectedBook}
+          onBookDeleted={handleBookUpdated}
         />
       )}
     </div>
