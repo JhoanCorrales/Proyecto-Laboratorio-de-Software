@@ -71,9 +71,14 @@ export async function runMigrations() {
   }
 }
 
+// Named exports: Netlify NFT pone query/getClient en el objeto que las rutas
+// reciben como import_db.default, evitando "default.query is not a function".
+export const query = (text, params) => pool.query(text, params);
+export const getClient = () => pool.connect();
+
 export default {
-  query: (text, params) => pool.query(text, params),
-  getClient: () => pool.connect(),
+  query,
+  getClient,
   updateGlobalStock,
   runMigrations,
 };
