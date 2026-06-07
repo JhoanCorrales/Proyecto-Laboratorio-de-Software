@@ -1,6 +1,12 @@
 import serverless from "serverless-http";
-import app from "../../backend/app.js";
-import db from "../../backend/db/index.js";
+import appModule from "../../backend/app.js";
+import dbModule from "../../backend/db/index.js";
+
+// Netlify NFT envuelve los default exports al transpilar ESM → CJS.
+const unwrap = (mod) => mod?.default?.default ?? mod?.default ?? mod;
+
+const app = unwrap(appModule);
+const db = unwrap(dbModule);
 
 let migrationsRun = false;
 
