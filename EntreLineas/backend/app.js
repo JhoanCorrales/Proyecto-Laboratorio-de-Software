@@ -13,6 +13,9 @@ import recommendationsRouter from "./routes/recommendations.js";
 
 dotenv.config();
 
+// Netlify NFT transpila ESM a CJS y envuelve los default exports; esto los normaliza.
+const asRouter = (mod) => mod?.default?.default ?? mod?.default ?? mod;
+
 // Validate required environment variables
 const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET"];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
@@ -71,31 +74,31 @@ app.get("/api/health", async (req, res) => {
 });
 
 // Auth routes
-app.use("/api/auth", authRouter);
+app.use("/api/auth", asRouter(authRouter));
 
 // Cart routes
-app.use("/api/cart", cartRouter);
+app.use("/api/cart", asRouter(cartRouter));
 
 // Wallet routes
-app.use("/api/wallet", walletRouter);
+app.use("/api/wallet", asRouter(walletRouter));
 
 // Stores routes
-app.use("/api/stores", storesRouter);
+app.use("/api/stores", asRouter(storesRouter));
 
 // Books routes
-app.use("/api/books", booksRouter);
+app.use("/api/books", asRouter(booksRouter));
 
 // Checkout routes
-app.use("/api/checkout", checkoutRouter);
+app.use("/api/checkout", asRouter(checkoutRouter));
 
 // Purchases routes
-app.use("/api/purchases", purchasesRouter);
+app.use("/api/purchases", asRouter(purchasesRouter));
 
 // Noticias routes
-app.use("/api/noticias", noticiasRouter);
+app.use("/api/noticias", asRouter(noticiasRouter));
 
 // Recommendations routes
-app.use("/api/recommendations", recommendationsRouter);
+app.use("/api/recommendations", asRouter(recommendationsRouter));
 
 // 404 handler
 app.use((req, res) => {
