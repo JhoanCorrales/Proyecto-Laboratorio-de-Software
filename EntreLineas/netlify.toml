@@ -3,11 +3,6 @@
   publish = "dist"
   functions = "netlify/functions"
 
-[functions]
-  # NFT transpila ESM a CJS y rompe los `export default` de los routers de Express.
-  node_bundler = "none"
-  included_files = ["backend/**"]
-
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
