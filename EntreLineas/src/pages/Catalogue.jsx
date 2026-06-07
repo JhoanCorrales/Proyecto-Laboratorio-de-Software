@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import BookCard from "../components/BookCard";
+import BookCard from "../components/Bookcard";
 import AuthRequiredModal from "../components/AuthRequiredModal";
 
 const PAGE_SIZE = 20;

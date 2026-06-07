@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import BookCard from "./BookCard";
+import BookCard from "./Bookcard";
 
 const USD_TO_COP = 4000;
 
