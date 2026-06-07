@@ -2,7 +2,7 @@
  * Recommendation Service - AI-like recommendations using NLP
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4003';
+const API_URL = import.meta.env.VITE_API_URL || '';
 const API_BASE_URL = `${API_URL}/api`;
 
 // Obtener token del localStorage

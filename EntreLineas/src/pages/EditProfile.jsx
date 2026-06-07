@@ -35,7 +35,7 @@ function EditProfile() {
       if (!token) { navigate("/"); return; }
 
       try {
-        const response = await fetch("http://localhost:4003/api/auth/profile", {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -94,7 +94,7 @@ function EditProfile() {
     if (!token) { navigate("/"); return; }
 
     try {
-      const response = await fetch("http://localhost:4003/api/auth/profile", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

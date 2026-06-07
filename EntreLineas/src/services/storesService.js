@@ -3,7 +3,7 @@
  * Realiza operaciones CRUD con la API backend
  */
 
-const API_URL = "http://localhost:4003/api/stores";
+const API_URL = `${import.meta.env.VITE_API_URL || ""}/api/stores`;
 
 /**
  * Obtiene todas las tiendas

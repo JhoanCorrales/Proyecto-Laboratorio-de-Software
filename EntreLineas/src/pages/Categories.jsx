@@ -99,7 +99,7 @@ function Categories() {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:4003/api/auth/categories", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/categories`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) throw new Error("Error al cargar categorías");

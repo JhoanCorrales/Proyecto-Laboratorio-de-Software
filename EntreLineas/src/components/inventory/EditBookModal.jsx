@@ -57,7 +57,7 @@ export default function EditBookModal({ isOpen, onClose, storeId, libroId, onBoo
         }
         
         try {
-          const resCats = await fetch("http://localhost:4003/api/auth/categories");
+          const resCats = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/categories`);
           if (resCats.ok) {
             const catsData = await resCats.json();
             setCategories(catsData);

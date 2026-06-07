@@ -33,7 +33,7 @@ function SecuritySection() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:4003/api/auth/change-password", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/change-password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -76,7 +76,7 @@ function SecuritySection() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:4003/api/auth/delete-account", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/delete-account`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

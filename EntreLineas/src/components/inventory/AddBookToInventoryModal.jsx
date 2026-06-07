@@ -34,7 +34,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
   useEffect(() => {
     const loadCats = async () => {
       try {
-        const res = await fetch("http://localhost:4003/api/auth/categories");
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/categories`);
         if (res.ok) {
           const data = await res.json();
           setCategories(data);
@@ -66,7 +66,7 @@ export default function AddBookToInventoryModal({ isOpen, onClose, storeId, onBo
         q: `q=${encodeURIComponent(value)}&limit=10&fields=key,title,author_name,cover_i,isbn,first_publish_year,subject,language,number_of_pages_median,publisher`,
         type: "search"
       });
-      const res = await fetch(`http://localhost:4003/api/auth/openlibrary?${searchParams}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/openlibrary?${searchParams}`);
       if (!res.ok) throw new Error("Error buscando libros");
       const data = await res.json();
       

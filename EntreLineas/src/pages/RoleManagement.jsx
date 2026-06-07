@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
-const API = "http://localhost:4003/api/auth";
+const API = `${import.meta.env.VITE_API_URL || ""}/api/auth`;
 const ROLES = ["Root", "Administrador", "Cliente", "Visitante"];
 
 const ROLE_BADGE = {

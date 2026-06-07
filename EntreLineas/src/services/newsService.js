@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:4003/api/noticias";
+const API_URL = `${import.meta.env.VITE_API_URL || ""}/api/noticias`;
 
 // Obtener todas las noticias (públicas o autenticadas)
 export const getNews = async () => {

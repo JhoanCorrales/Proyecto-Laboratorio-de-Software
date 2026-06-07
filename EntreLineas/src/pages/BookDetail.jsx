@@ -144,7 +144,7 @@ function BookDetail() {
       setBookStores([]);
 
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4003';
+        const baseUrl = import.meta.env.VITE_API_URL || '';
         
         // 1. Fetch de la DB local
         const dbRes = await fetch(`${baseUrl}/api/books/${bookId}`);
@@ -174,11 +174,11 @@ function BookDetail() {
             q: `q=${encodeURIComponent(localBook.titulo)}&limit=1&fields=key`,
             type: "search"
           });
-          const searchRes = await fetch(`http://localhost:4003/api/auth/openlibrary?${searchParams}`);
+          const searchRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/openlibrary?${searchParams}`);
           const searchData = await searchRes.json();
           if (searchData.docs?.length) {
             const olKey = searchData.docs[0].key;
-            const workRes = await fetch(`http://localhost:4003/api/auth/openlibrary?q=${encodeURIComponent(olKey)}&type=work`);
+            const workRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/openlibrary?q=${encodeURIComponent(olKey)}&type=work`);
             if (workRes.ok) {
                const work = await workRes.json();
                setWorkData(work);

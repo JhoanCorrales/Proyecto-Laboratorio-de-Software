@@ -60,7 +60,7 @@ function FeaturedBooks({ onAuthRequired }) {
   useEffect(() => {
     const fetchBooks = async (retryCount = 0, maxRetries = 5) => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4003';
+        const baseUrl = import.meta.env.VITE_API_URL || '';
         const res = await fetch(`${baseUrl}/api/books/public?limit=5`);
         
         // Verificar si la respuesta fue exitosa
